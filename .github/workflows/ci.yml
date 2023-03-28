@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: ${{ matrix.os.name }} / GHC ${{ matrix.ghc-version }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os.id }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - { id: ubuntu-latest, name: Linux }
+          - { id: macos-latest, name: macOS }
+          - { id: windows-latest, name: Windows }
+        ghc-version: ["8.10", "9.0", "9.2", "9.4", "9.6"]
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - name: Setup Haskell
+        uses: haskell/actions/setup@v2
+        with:
+          ghc-version: ${{ matrix.ghc-version }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - run: make run
+        shell: sh
