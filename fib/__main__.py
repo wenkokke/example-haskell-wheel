@@ -1,3 +1,4 @@
+print("Step 0")
 import binding
 print("Step 1")
 binding._fib_init()

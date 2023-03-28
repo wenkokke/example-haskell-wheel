@@ -7,7 +7,7 @@ GHC_INCLUDE_DIR := $(GHC_LIB_DIR)/rts-1.0.2/include
 
 .PHONY: run
 run: fib/binding.so
-	python fib/__main__.py
+	(cd fib && python __main__.py)
 
 fib/binding.so: fib/binding.o Fib.o
 	ghc \
@@ -31,3 +31,7 @@ fib/binding.o: Fib_stub.h fib/binding.c
 
 Fib_stub.h Fib.hi Fib.o: Fib.hs
 	ghc -c -dynamic -fPIC $<
+
+.PHONY: clean
+clean:
+	git clean -fdX

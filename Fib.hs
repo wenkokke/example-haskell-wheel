@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall                 #-}
 {-# LANGUAGE ForeignFunctionInterface #-}
 
-module MyFib where
+module Fib where
 
 import Foreign.C.Types ( CInt(..) )
 

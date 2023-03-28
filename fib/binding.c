@@ -2,15 +2,12 @@
 #include <Python.h>
 #include "Fib_stub.h"
 
-extern HsInt32 fib_hs(HsInt32 n);
-
 static PyObject *fib_init(PyObject *self, PyObject *args)
 {
-    int argc = 0;
-    char *argv[] = {NULL};
+    int argc = 1;
+    char *argv[] = {"fib", NULL};
     char **pargv = argv;
 
-    printf( "hs_init" );
     hs_init(&argc, &pargv);
 
     Py_INCREF(Py_None);
@@ -19,7 +16,6 @@ static PyObject *fib_init(PyObject *self, PyObject *args)
 
 static PyObject *fib_exit(PyObject *self, PyObject *args)
 {
-    printf( "hs_exit" );
     hs_exit();
 
     Py_INCREF(Py_None);
@@ -28,10 +24,14 @@ static PyObject *fib_exit(PyObject *self, PyObject *args)
 
 static PyObject *fib(PyObject *self, PyObject *args)
 {
-    int *n;
+    const int *n;
+    int ret;
+
     if (!PyArg_ParseTuple(args, "i", &n))
         return NULL;
-    const int ret = fib_hs(*n);
+
+    ret = fib_hs(*n);
+
     return PyLong_FromLong(ret);
 }
 
