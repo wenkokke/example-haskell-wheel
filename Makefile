@@ -4,7 +4,7 @@ PYTHON_INCLUDE_DIR := $(PYTHON_EXEC_PREFIX)/include/$(PYTHON_VERSION_TAG)
 
 GHC_VERSION := $(shell ghc --numeric-version)
 GHC_LIB_DIR := $(wildcard $(shell ghc --print-libdir)/*-ghc-$(GHC_VERSION))
-GHC_INCLUDE_DIR := $(wildcard $(GHC_LIB_DIR)/rts-*/include)
+GHC_INCLUDE_DIR := $(firstword $(wildcard $(GHC_LIB_DIR)/include) $(wildcard $(GHC_LIB_DIR)/rts-*/include))
 GHC_LIB_RTS := $(subst lib,,$(basename $(notdir $(firstword $(wildcard $(GHC_LIB_DIR)/libHSrts-*)))))
 
 .PHONY: run
@@ -30,6 +30,7 @@ fib/binding_wrap.o: Fib_stub.h fib/binding_wrap.c
 		-I$(PYTHON_INCLUDE_DIR) \
 		-I$(GHC_INCLUDE_DIR) \
 		-o fib/binding_wrap.o
+
 
 fib/binding_wrap.c: Fib_stub.h fib/binding.i
 	swig \
