@@ -8,7 +8,7 @@ HSRTS_VERSION := $(shell ghc-pkg field rts version --simple-output)
 HSRTS_LIB_DIRS := $(addprefix -L,$(shell ghc-pkg field rts library-dirs --simple-output))
 HSRTS_DYNLIB_DIRS := $(addprefix -L,$(shell ghc-pkg field rts dynamic-library-dirs --simple-output))
 HSRTS_INCLUDE_DIRS := $(addprefix -I,$(shell ghc-pkg field rts include-dirs --simple-output))
-HSRTS_LD_OPTIONS := $(addprefix -I,$(shell ghc-pkg field rts ld-options --simple-output))
+LD_OPTIONS := $(addprefix -I,$(shell ghc-pkg field rts ld-options --simple-output))
 HSRTS_LIB_FLAGS := $(addprefix -l,$(addsuffix -ghc$(GHC_VERSION),$(shell ghc-pkg field rts hs-libraries --simple-output)))
 HSRTS_EXTRA_LIB_FLAGS := $(addprefix -l,$(shell ghc-pkg field rts extra-libraries --simple-output))
 
@@ -22,15 +22,25 @@ info:
 	@echo "HSRTS_LIB_DIRS = $(HSRTS_LIB_DIRS)"
 	@echo "HSRTS_DYNLIB_DIRS = $(HSRTS_DYNLIB_DIRS)"
 	@echo "HSRTS_INCLUDE_DIRS = $(HSRTS_INCLUDE_DIRS)"
-	@echo "HSRTS_LD_OPTIONS = $(HSRTS_LD_OPTIONS)"
+	@echo "LD_OPTIONS = $(LD_OPTIONS)"
 	@echo "HSRTS_EXTRA_LIB_FLAGS = $(HSRTS_EXTRA_LIB_FLAGS)"
 
 .PHONY: run
 run: fib/_binding.so
 	python fib/__main__.py
 
+# Workaround for:
+# ld: warning: -undefined dynamic_lookup may not work with chained fixups
+ifeq ($(OS),Windows_NT)
+else
+  UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Darwin)
+		LD_OPTIONS += -optl=-Wl,-no_fixup_chains
+	endif
+endif
+
 fib/_binding.so: fib/binding_wrap.o Fib.o
-	ghc -o fib/_binding.so -shared -dynamic -fPIC fib/binding_wrap.o Fib.o $(HSRTS_DYNLIB_DIRS) $(HSRTS_LIB_DIRS) $(HSRTS_LD_OPTIONS) $(HSRTS_LIB_FLAGS) $(HSRTS_EXTRA_LIB_FLAGS)
+	ghc -o fib/_binding.so -shared -dynamic -fPIC fib/binding_wrap.o Fib.o $(HSRTS_DYNLIB_DIRS) $(HSRTS_LIB_DIRS) $(LD_OPTIONS) $(HSRTS_LIB_FLAGS) $(HSRTS_EXTRA_LIB_FLAGS)
 
 fib/binding_wrap.o: Fib_stub.h fib/binding_wrap.c
 	gcc -fpic -c fib/binding_wrap.c -I. -I$(PYTHON_INCLUDE_DIR) $(HSRTS_INCLUDE_DIRS) -o fib/binding_wrap.o
