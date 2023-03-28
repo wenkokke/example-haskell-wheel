@@ -5,12 +5,12 @@ module Fib where
 
 import Foreign.C.Types ( CInt(..) )
 
-foreign export ccall fib_hs :: CInt -> CInt
+foreign export ccall hs_fib :: CInt -> CInt
 
-fib_hs :: CInt -> CInt
-fib_hs = fromIntegral . fib . fromIntegral
+hs_fib :: CInt -> CInt
+hs_fib = fromIntegral . fib . fromIntegral
 
-fib :: Int -> Integer
-fib n = fibs !! n
-  where
-    fibs = 0 : 1 : zipWith (+) fibs (tail fibs)
+fib :: Integer -> Integer
+fib 0 = 0
+fib 1 = 1
+fib n = fib (n-1) + fib (n-2)

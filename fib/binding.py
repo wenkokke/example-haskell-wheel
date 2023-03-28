@@ -7,9 +7,9 @@
 from sys import version_info as _swig_python_version_info
 # Import the low-level C/C++ module
 if __package__ or "." in __name__:
-    from . import _example
+    from . import _binding
 else:
-    import _example
+    import _binding
 
 try:
     import builtins as __builtin__
@@ -59,12 +59,12 @@ class _SwigNonDynamicMeta(type):
 
 
 
-def fib_hs(n):
-    return _example.fib_hs(n)
+def hs_fib(n):
+    return _binding.hs_fib(n)
 
-def hs_init(argc):
-    return _example.hs_init(argc)
+def hs_init_wrap():
+    return _binding.hs_init_wrap()
 
 def hs_exit():
-    return _example.hs_exit()
+    return _binding.hs_exit()
 

@@ -2978,11 +2978,9 @@ SWIG_Python_NonDynamicSetAttr(PyObject *obj, PyObject *name, PyObject *value) {
 
 /* -------- TYPES TABLE (BEGIN) -------- */
 
-#define SWIGTYPE_p_HsInt32 swig_types[0]
-#define SWIGTYPE_p_char swig_types[1]
-#define SWIGTYPE_p_p_char swig_types[2]
-static swig_type_info *swig_types[4];
-static swig_module_info swig_module = {swig_types, 3, 0, 0, 0, 0};
+#define SWIGTYPE_p_char swig_types[0]
+static swig_type_info *swig_types[2];
+static swig_module_info swig_module = {swig_types, 1, 0, 0, 0, 0};
 #define SWIG_TypeQuery(name) SWIG_TypeQueryModule(&swig_module, &swig_module, name)
 #define SWIG_MangledTypeQuery(name) SWIG_MangledTypeQueryModule(&swig_module, &swig_module, name)
 
@@ -2994,248 +2992,62 @@ static swig_module_info swig_module = {swig_types, 3, 0, 0, 0, 0};
 #define SWIG_TypeQuery SWIG_Python_TypeQuery
 
 /*-----------------------------------------------
-              @(target):= _example.so
+              @(target):= _binding.so
   ------------------------------------------------*/
 #if PY_VERSION_HEX >= 0x03000000
-#  define SWIG_init    PyInit__example
+#  define SWIG_init    PyInit__binding
 
 #else
-#  define SWIG_init    init_example
+#  define SWIG_init    init_binding
 
 #endif
-#define SWIG_name    "_example"
+#define SWIG_name    "_binding"
 
 #define SWIG_as_voidptr(a) (void *)((const void *)(a)) 
 #define SWIG_as_voidptrptr(a) ((void)SWIG_as_voidptr(*a),(void**)(a)) 
 
 
-extern HsInt32 fib_hs(HsInt32 n);
-extern void hs_init(int argc, char** argv);
+#include "Fib_stub.h"
+extern HsInt32 hs_fib(HsInt32 n);
 extern void hs_exit();
 
-
-#include <limits.h>
-#if !defined(SWIG_NO_LLONG_MAX)
-# if !defined(LLONG_MAX) && defined(__GNUC__) && defined (__LONG_LONG_MAX__)
-#   define LLONG_MAX __LONG_LONG_MAX__
-#   define LLONG_MIN (-LLONG_MAX - 1LL)
-#   define ULLONG_MAX (LLONG_MAX * 2ULL + 1ULL)
-# endif
-#endif
-
-
-SWIGINTERN int
-SWIG_AsVal_double (PyObject *obj, double *val)
+void hs_init_wrap()
 {
-  int res = SWIG_TypeError;
-  if (PyFloat_Check(obj)) {
-    if (val) *val = PyFloat_AsDouble(obj);
-    return SWIG_OK;
-#if PY_VERSION_HEX < 0x03000000
-  } else if (PyInt_Check(obj)) {
-    if (val) *val = (double) PyInt_AsLong(obj);
-    return SWIG_OK;
-#endif
-  } else if (PyLong_Check(obj)) {
-    double v = PyLong_AsDouble(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_OK;
-    } else {
-      PyErr_Clear();
-    }
-  }
-#ifdef SWIG_PYTHON_CAST_MODE
-  {
-    int dispatch = 0;
-    double d = PyFloat_AsDouble(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = d;
-      return SWIG_AddCast(SWIG_OK);
-    } else {
-      PyErr_Clear();
-    }
-    if (!dispatch) {
-      long v = PyLong_AsLong(obj);
-      if (!PyErr_Occurred()) {
-	if (val) *val = v;
-	return SWIG_AddCast(SWIG_AddCast(SWIG_OK));
-      } else {
-	PyErr_Clear();
-      }
-    }
-  }
-#endif
-  return res;
-}
-
-
-#include <float.h>
-
-
-#include <math.h>
-
-
-SWIGINTERNINLINE int
-SWIG_CanCastAsInteger(double *d, double min, double max) {
-  double x = *d;
-  if ((min <= x && x <= max)) {
-   double fx = floor(x);
-   double cx = ceil(x);
-   double rd =  ((x - fx) < 0.5) ? fx : cx; /* simple rint */
-   if ((errno == EDOM) || (errno == ERANGE)) {
-     errno = 0;
-   } else {
-     double summ, reps, diff;
-     if (rd < x) {
-       diff = x - rd;
-     } else if (rd > x) {
-       diff = rd - x;
-     } else {
-       return 1;
-     }
-     summ = rd + x;
-     reps = diff/summ;
-     if (reps < 8*DBL_EPSILON) {
-       *d = rd;
-       return 1;
-     }
-   }
-  }
-  return 0;
-}
-
-
-SWIGINTERN int
-SWIG_AsVal_long (PyObject *obj, long* val)
-{
-#if PY_VERSION_HEX < 0x03000000
-  if (PyInt_Check(obj)) {
-    if (val) *val = PyInt_AsLong(obj);
-    return SWIG_OK;
-  } else
-#endif
-  if (PyLong_Check(obj)) {
-    long v = PyLong_AsLong(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_OK;
-    } else {
-      PyErr_Clear();
-      return SWIG_OverflowError;
-    }
-  }
-#ifdef SWIG_PYTHON_CAST_MODE
-  {
-    int dispatch = 0;
-    long v = PyInt_AsLong(obj);
-    if (!PyErr_Occurred()) {
-      if (val) *val = v;
-      return SWIG_AddCast(SWIG_OK);
-    } else {
-      PyErr_Clear();
-    }
-    if (!dispatch) {
-      double d;
-      int res = SWIG_AddCast(SWIG_AsVal_double (obj,&d));
-      if (SWIG_IsOK(res) && SWIG_CanCastAsInteger(&d, LONG_MIN, LONG_MAX)) {
-	if (val) *val = (long)(d);
-	return res;
-      }
-    }
-  }
-#endif
-  return SWIG_TypeError;
-}
-
-
-SWIGINTERN int
-SWIG_AsVal_int (PyObject * obj, int *val)
-{
-  long v;
-  int res = SWIG_AsVal_long (obj, &v);
-  if (SWIG_IsOK(res)) {
-    if ((v < INT_MIN || v > INT_MAX)) {
-      return SWIG_OverflowError;
-    } else {
-      if (val) *val = (int)(v);
-    }
-  }  
-  return res;
+  return hs_init(NULL, NULL);
 }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-SWIGINTERN PyObject *_wrap_fib_hs(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_hs_fib(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
   HsInt32 arg1 ;
-  void *argp1 ;
-  int res1 = 0 ;
   PyObject *swig_obj[1] ;
   HsInt32 result;
   
   if (!args) SWIG_fail;
   swig_obj[0] = args;
   {
-    res1 = SWIG_ConvertPtr(swig_obj[0], &argp1, SWIGTYPE_p_HsInt32,  0 );
-    if (!SWIG_IsOK(res1)) {
-      SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "fib_hs" "', argument " "1"" of type '" "HsInt32""'"); 
-    }  
-    if (!argp1) {
-      SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "fib_hs" "', argument " "1"" of type '" "HsInt32""'");
-    } else {
-      arg1 = *((HsInt32 *)(argp1));
-    }
+    arg1 = PyInt_AsLong(swig_obj[0]);
   }
-  result = fib_hs(arg1);
-  resultobj = SWIG_NewPointerObj((HsInt32 *)memcpy((HsInt32 *)calloc(1,sizeof(HsInt32)),&result,sizeof(HsInt32)), SWIGTYPE_p_HsInt32, SWIG_POINTER_OWN |  0 );
+  result = hs_fib(arg1);
+  {
+    resultobj = PyInt_FromLong(result);
+  }
   return resultobj;
 fail:
   return NULL;
 }
 
 
-SWIGINTERN PyObject *_wrap_hs_init(PyObject *self, PyObject *args) {
+SWIGINTERN PyObject *_wrap_hs_init_wrap(PyObject *self, PyObject *args) {
   PyObject *resultobj = 0;
-  int arg1 ;
-  char **arg2 = (char **) 0 ;
-  PyObject *swig_obj[1] ;
   
-  if (!args) SWIG_fail;
-  swig_obj[0] = args;
-  {
-    /* Check if is a list */
-    if (PyList_Check(swig_obj[0])) {
-      int i;
-      arg1 = PyList_Size(swig_obj[0]);
-      arg2 = (char **) malloc((arg1+1)*sizeof(char *));
-      for (i = 0; i < arg1; i++) {
-        PyObject *o = PyList_GetItem(swig_obj[0],i);
-        if (PyString_Check(o))
-        arg2[i] = PyString_AsString(PyList_GetItem(swig_obj[0],i));
-        else {
-          PyErr_SetString(PyExc_TypeError,"list must contain strings");
-          free(arg2);
-          return NULL;
-        }
-      }
-      arg2[i] = 0;
-    } else {
-      PyErr_SetString(PyExc_TypeError,"not a list");
-      return NULL;
-    }
-  }
-  hs_init(arg1,arg2);
+  if (!SWIG_Python_UnpackTuple(args, "hs_init_wrap", 0, 0, 0)) SWIG_fail;
+  hs_init_wrap();
   resultobj = SWIG_Py_Void();
-  {
-    free((char *) arg2);
-  }
   return resultobj;
 fail:
-  {
-    free((char *) arg2);
-  }
   return NULL;
 }
 
@@ -3253,8 +3065,8 @@ fail:
 
 
 static PyMethodDef SwigMethods[] = {
-	 { "fib_hs", _wrap_fib_hs, METH_O, NULL},
-	 { "hs_init", _wrap_hs_init, METH_O, NULL},
+	 { "hs_fib", _wrap_hs_fib, METH_O, NULL},
+	 { "hs_init_wrap", _wrap_hs_init_wrap, METH_NOARGS, NULL},
 	 { "hs_exit", _wrap_hs_exit, METH_NOARGS, NULL},
 	 { NULL, NULL, 0, NULL }
 };
@@ -3262,24 +3074,16 @@ static PyMethodDef SwigMethods[] = {
 
 /* -------- TYPE CONVERSION AND EQUIVALENCE RULES (BEGIN) -------- */
 
-static swig_type_info _swigt__p_HsInt32 = {"_p_HsInt32", "HsInt32 *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_p_char = {"_p_p_char", "char **", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
-  &_swigt__p_HsInt32,
   &_swigt__p_char,
-  &_swigt__p_p_char,
 };
 
-static swig_cast_info _swigc__p_HsInt32[] = {  {&_swigt__p_HsInt32, 0, 0, 0},{0, 0, 0, 0}};
 static swig_cast_info _swigc__p_char[] = {  {&_swigt__p_char, 0, 0, 0},{0, 0, 0, 0}};
-static swig_cast_info _swigc__p_p_char[] = {  {&_swigt__p_p_char, 0, 0, 0},{0, 0, 0, 0}};
 
 static swig_cast_info *swig_cast_initial[] = {
-  _swigc__p_HsInt32,
   _swigc__p_char,
-  _swigc__p_p_char,
 };
 
 
