@@ -17,8 +17,9 @@ jobs:
           - { id: ubuntu-latest, name: Linux }
           - { id: macos-latest, name: macOS }
           - { id: windows-latest, name: Windows }
-        ghc-version: ["8.10", "9.0", "9.2", "9.4", "9.6"]
+        ghc-version: ["8.10", "9.0", "9.2", "9.4"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
+        swig-version: ["4.0.2"]
 
     steps:
       - name: Setup Haskell
@@ -30,6 +31,11 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
+      - name: Setup swig
+        uses: johnwason/swig-build-action@v1
+        with:
+          version: ${{ matrix.swig-version }}
 
       - run: make run
         shell: sh
