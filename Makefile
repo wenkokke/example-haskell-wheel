@@ -3,6 +3,13 @@ GHC_LIBDIR := $(shell ghc --print-libdir)
 GHC_RTS_LIBDIR := $(GHC_LIBDIR)/aarch64-osx-ghc-$(GHC_VERSION)/rts-1.0.2
 GHC_RTS_INCLUDEDIR := $(GHC_RTS_LIBDIR)/include
 
+.PHONY: build
+build: main
+
+.PHONY: run
+run: main
+	./main
+
 MyFib_stub.h MyFib.hi MyFib.o: MyFib.hs
 	ghc -c -O MyFib.hs
 
