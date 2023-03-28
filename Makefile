@@ -3,10 +3,10 @@ PYTHON_VERSION_TAG := $(shell python -c 'import platform; x, y, _ = platform.pyt
 PYTHON_INCLUDE_DIR := $(PYTHON_EXEC_PREFIX)/include/$(PYTHON_VERSION_TAG)
 
 HSRTS_VERSION := $(shell ghc-pkg field rts version --simple-output)
-HSRTS_LIBNAME := $(shell ghc-pkg field rts hs-libraries --simple-output)
-HSRTS_LIB_FLAGS := $(addprefix -L,$(shell ghc-pkg field rts library-dirs --simple-output))
-HSRTS_INCLUDE_FLAGS := $(addprefix -I,$(shell ghc-pkg field rts include-dirs --simple-output))
+HSRTS_LIB_DIRS := $(addprefix -L,$(shell ghc-pkg field rts library-dirs --simple-output))
+HSRTS_INCLUDE_DIRS := $(addprefix -I,$(shell ghc-pkg field rts include-dirs --simple-output))
 HSRTS_LD_OPTIONS := $(addprefix -I,$(shell ghc-pkg field rts ld-options --simple-output))
+HSRTS_LIB_FLAGS := $(addprefix -l,$(shell ghc-pkg field rts hs-libraries --simple-output))
 HSRTS_EXTRA_LIB_FLAGS := $(addprefix -l,$(shell ghc-pkg field rts extra-libraries --simple-output))
 
 .PHONY: info
@@ -15,9 +15,9 @@ info:
 	@echo "PYTHON_VERSION_TAG = $(PYTHON_VERSION_TAG)"
 	@echo "PYTHON_INCLUDE_DIR = $(PYTHON_INCLUDE_DIR)"
 	@echo "HSRTS_VERSION = $(HSRTS_VERSION)"
-	@echo "HSRTS_LIBNAME = $(HSRTS_LIBNAME)"
 	@echo "HSRTS_LIB_FLAGS = $(HSRTS_LIB_FLAGS)"
-	@echo "HSRTS_INCLUDE_FLAGS = $(HSRTS_INCLUDE_FLAGS)"
+	@echo "HSRTS_LIB_DIRS = $(HSRTS_LIB_DIRS)"
+	@echo "HSRTS_INCLUDE_DIRS = $(HSRTS_INCLUDE_DIRS)"
 	@echo "HSRTS_LD_OPTIONS = $(HSRTS_LD_OPTIONS)"
 	@echo "HSRTS_EXTRA_LIB_FLAGS = $(HSRTS_EXTRA_LIB_FLAGS)"
 
@@ -26,10 +26,10 @@ run: fib/_binding.so
 	python fib/__main__.py
 
 fib/_binding.so: fib/binding_wrap.o Fib.o
-	ghc -o fib/_binding.so -shared -dynamic -fPIC fib/binding_wrap.o Fib.o $(HSRTS_LIB_FLAGS) $(HSRTS_LD_OPTIONS) -l$(HSRTS_LIBNAME) $(HSRTS_EXTRA_LIB_FLAGS)
+	ghc -o fib/_binding.so -shared -dynamic -fPIC fib/binding_wrap.o Fib.o $(HSRTS_LIB_DIRS) $(HSRTS_LD_OPTIONS) $(HSRTS_LIB_FLAGS) $(HSRTS_EXTRA_LIB_FLAGS)
 
 fib/binding_wrap.o: Fib_stub.h fib/binding_wrap.c
-	gcc -fpic -c fib/binding_wrap.c -I. -I$(PYTHON_INCLUDE_DIR) $(HSRTS_INCLUDE_FLAGS) -o fib/binding_wrap.o
+	gcc -fpic -c fib/binding_wrap.c -I. -I$(PYTHON_INCLUDE_DIR) $(HSRTS_INCLUDE_DIRS) -o fib/binding_wrap.o
 
 fib/binding_wrap.c: Fib_stub.h fib/binding.i
 	swig -python fib/binding.i
