@@ -1,0 +1,31 @@
+cabal-version:      3.0
+name:               haskell-wheel
+version:            0.1.0
+-- synopsis:
+-- description:
+license:            MIT
+license-file:       LICENSE
+author:             Wen Kokke
+maintainer:         wenkokke@users.noreply.github.com
+-- copyright:
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+  ghc-options: -Wall
+
+  -- # Workaround for chained fixups
+  if os(Darwin)
+    ghc-options: -optl=-Wl,-no_fixup_chains
+
+foreign-library Fib
+  type:                native-shared
+  options:             standalone
+  other-modules:       Fib
+  build-depends:       base >=4.7 && <5
+  c-sources:           cbits/binding_wrap.c
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  include-dirs:        /Users/keri/.pyenv/versions/3.10.10/include/python3.10/
+  includes:            Python.h

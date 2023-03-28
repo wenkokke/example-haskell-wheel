@@ -6,10 +6,9 @@ GHC_VERSION := $(shell ghc --numeric-version)
 
 HSRTS_VERSION := $(shell ghc-pkg field rts version --simple-output)
 HSRTS_LIB_DIRS := $(addprefix -L,$(shell ghc-pkg field rts library-dirs --simple-output))
-HSRTS_DYNLIB_DIRS := $(addprefix -L,$(shell ghc-pkg field rts dynamic-library-dirs --simple-output))
 HSRTS_INCLUDE_DIRS := $(addprefix -I,$(shell ghc-pkg field rts include-dirs --simple-output))
 LD_OPTIONS := $(addprefix -I,$(shell ghc-pkg field rts ld-options --simple-output))
-HSRTS_LIB_FLAGS := $(addprefix -l,$(addsuffix -ghc$(GHC_VERSION),$(shell ghc-pkg field rts hs-libraries --simple-output)))
+HSRTS_LIB_FLAGS := $(addprefix -l,$(shell ghc-pkg field rts hs-libraries --simple-output))
 HSRTS_EXTRA_LIB_FLAGS := $(addprefix -l,$(shell ghc-pkg field rts extra-libraries --simple-output))
 
 .PHONY: info
@@ -20,14 +19,13 @@ info:
 	@echo "HSRTS_VERSION = $(HSRTS_VERSION)"
 	@echo "HSRTS_LIB_FLAGS = $(HSRTS_LIB_FLAGS)"
 	@echo "HSRTS_LIB_DIRS = $(HSRTS_LIB_DIRS)"
-	@echo "HSRTS_DYNLIB_DIRS = $(HSRTS_DYNLIB_DIRS)"
 	@echo "HSRTS_INCLUDE_DIRS = $(HSRTS_INCLUDE_DIRS)"
 	@echo "LD_OPTIONS = $(LD_OPTIONS)"
 	@echo "HSRTS_EXTRA_LIB_FLAGS = $(HSRTS_EXTRA_LIB_FLAGS)"
 
 .PHONY: run
-run: fib/_binding.so
-	python fib/__main__.py
+run: cbits/_binding.so
+	python cbits/__main__.py
 
 # Workaround for:
 # ld: warning: -undefined dynamic_lookup may not work with chained fixups
@@ -39,16 +37,16 @@ else
 	endif
 endif
 
-fib/_binding.so: fib/binding_wrap.o Fib.o
-	ghc -o fib/_binding.so -shared -dynamic -fPIC fib/binding_wrap.o Fib.o $(HSRTS_DYNLIB_DIRS) $(HSRTS_LIB_DIRS) $(LD_OPTIONS) $(HSRTS_LIB_FLAGS) $(HSRTS_EXTRA_LIB_FLAGS)
+cbits/_binding.so: cbits/binding_wrap.o src/Fib.o
+	ghc -o cbits/_binding.so -shared -dynamic -fPIC cbits/binding_wrap.o src/Fib.o $(HSRTS_DYNLIB_DIRS) $(HSRTS_LIB_DIRS) $(LD_OPTIONS) $(HSRTS_LIB_FLAGS) $(HSRTS_EXTRA_LIB_FLAGS)
 
-fib/binding_wrap.o: Fib_stub.h fib/binding_wrap.c
-	gcc -fpic -c fib/binding_wrap.c -I. -I$(PYTHON_INCLUDE_DIR) $(HSRTS_INCLUDE_DIRS) -o fib/binding_wrap.o
+cbits/binding_wrap.o: src/Fib_stub.h cbits/binding_wrap.c
+	gcc -fpic -c cbits/binding_wrap.c -Isrc -I$(PYTHON_INCLUDE_DIR) $(HSRTS_INCLUDE_DIRS) -o cbits/binding_wrap.o
 
-fib/binding_wrap.c: Fib_stub.h fib/binding.i
-	swig -python fib/binding.i
+cbits/binding_wrap.c: src/Fib_stub.h cbits/binding.i
+	swig -python cbits/binding.i
 
-Fib_stub.h Fib.hi Fib.o: Fib.hs
+src/Fib_stub.h src/Fib.hi src/Fib.o: src/Fib.hs
 	ghc -c -dynamic -fPIC $<
 
 .PHONY: clean
