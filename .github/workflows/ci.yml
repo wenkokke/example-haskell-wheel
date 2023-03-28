@@ -46,5 +46,7 @@ jobs:
           brew install swig
         shell: sh
 
-      - run: make run
+      - run: |
+          make info
+          make run
         shell: sh

@@ -9,6 +9,18 @@ HSRTS_INCLUDE_FLAGS := $(addprefix -I,$(shell ghc-pkg field rts include-dirs --s
 HSRTS_LD_OPTIONS := $(addprefix -I,$(shell ghc-pkg field rts ld-options --simple-output))
 HSRTS_EXTRA_LIB_FLAGS := $(addprefix -l,$(shell ghc-pkg field rts extra-libraries --simple-output))
 
+.PHONY: info
+info:
+	@echo "PYTHON_EXEC_PREFIX = $(PYTHON_EXEC_PREFIX)"
+	@echo "PYTHON_VERSION_TAG = $(PYTHON_VERSION_TAG)"
+	@echo "PYTHON_INCLUDE_DIR = $(PYTHON_INCLUDE_DIR)"
+	@echo "HSRTS_VERSION = $(HSRTS_VERSION)"
+	@echo "HSRTS_LIBNAME = $(HSRTS_LIBNAME)"
+	@echo "HSRTS_LIB_FLAGS = $(HSRTS_LIB_FLAGS)"
+	@echo "HSRTS_INCLUDE_FLAGS = $(HSRTS_INCLUDE_FLAGS)"
+	@echo "HSRTS_LD_OPTIONS = $(HSRTS_LD_OPTIONS)"
+	@echo "HSRTS_EXTRA_LIB_FLAGS = $(HSRTS_EXTRA_LIB_FLAGS)"
+
 .PHONY: run
 run: fib/_binding.so
 	python fib/__main__.py
