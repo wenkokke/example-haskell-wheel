@@ -22,6 +22,8 @@ jobs:
         swig-version: ["4.0.2"]
 
     steps:
+      - uses: actions/checkout@v3
+
       - name: Setup Haskell
         uses: haskell/actions/setup@v2
         with:
