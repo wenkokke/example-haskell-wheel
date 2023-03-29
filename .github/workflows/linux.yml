@@ -7,12 +7,16 @@ on:
 
 jobs:
   test:
-    name: Linux / GHC ${{ matrix.ghc.version }} / Python ${{ matrix.python.version }}
-    runs-on: ubuntu-latest
+    name: ${{ matrix.os.name }} / GHC ${{ matrix.ghc.version }} / Python ${{ matrix.python.version }}
+    runs-on: ${{ matrix.os.tag }}
 
     strategy:
       fail-fast: false
       matrix:
+        os:
+          - { tag: ubuntu-latest, name: Linux }
+          - { tag: macos-latest, name: macOS }
+          - { tag: windows-latest, name: Windows }
         ghc:
           - { version: "9.4.4", bootstrap-version: "9.0.2" }
         python:
@@ -20,33 +24,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
-      - name: Setup GHC ${{ matrix.ghc.bootstrap-version }}
-        id: setup-bootstrap-ghc
-        uses: haskell/actions/setup@v2
+      - uses: ./.github/actions/setup-haskell
         with:
-          ghc-version: ${{ matrix.ghc.bootstrap-version }}
-
-      - name: Setup GHC ${{ matrix.ghc.version }}
-        id: setup-ghc
-        run: |
-          ghcup compile ghc -j8 \
-            -v ${{ matrix.ghc.version }} \
-            -b ${{ matrix.ghc.bootstrap-version }} \
-            -p ${PWD}/patches \
-            -c ${PWD}/build.mk \
-            -o ${{ matrix.ghc.version }}-fPIC \
-            -- --with-system-libffi
-          ghcup set ${{ matrix.ghc.version }}-fPIC
-        shell: bash
-        working-directory: vendor/ghc
-
-      - name: Upload GHCup logs
-        if: steps.setup-ghc.outcome != 'success'
-        uses: actions/upload-artifact@v3
-        with:
-          name: ghcup-logs
-          path: ${HOME}/.ghcup/logs
+          ghc-version: ${{ matrix.ghc.version }}
+          ghc-bootstrap-version: ${{ matrix.ghc.bootstrap-version }}
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -54,9 +35,9 @@ jobs:
           python-version: ${{ matrix.python.version }}
 
       - name: Setup SWIG
-        run: sudo apt update && sudo apt -y install swig
+        run: pip install swig
 
-      - name: Build Python Native Module
+      - name: Build Python Native Module10
         run: cabal build
 
       - name: Test Python Native Module

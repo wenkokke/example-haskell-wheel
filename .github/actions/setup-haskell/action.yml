@@ -1,0 +1,58 @@
+name: "Setup Haskell"
+description: "Setup Haskell"
+inputs:
+  ghc-version:
+    required: false
+    description: 'Version of GHC to use. If set to "latest", it will always get the latest stable version.'
+    default: "latest"
+  ghc-bootstrap-version:
+    required: false
+    description: 'Version of GHC to use to bootstrap GHC.'
+  cabal-version:
+    required: false
+    description: 'Version of Cabal to use. If set to "latest", it will always get the latest stable version.'
+    default: "latest"
+runs:
+  using: "composite"
+  steps:
+    - name: Setup GHC ${{ inputs.ghc-version }}
+      if: runner.os == 'macOS' || runner.os == 'Windows'
+      uses: haskell/actions/setup@v2
+      with:
+        ghc-version: ${{ inputs.ghc-version }}
+        cabal-version: ${{ inputs.cabal-version }}
+
+    - name: Validate Inputs
+      if: runner.os == 'Linux' && inputs.ghc-bootstrap-version == ''
+      run: echo "GHC bootstrap version not provided on Linux" && exit 1
+      shell: sh
+
+    - name: Setup GHC ${{ inputs.ghc-bootstrap-version }}
+      if: runner.os == 'Linux'
+      id: setup-bootstrap-ghc
+      uses: haskell/actions/setup@v2
+      with:
+        ghc-version: ${{ inputs.ghc-bootstrap-version }}
+        cabal-version: ${{ inputs.cabal-version }}
+
+    - name: Setup GHC ${{ inputs.ghc-version }}
+      if: runner.os == 'Linux'
+      id: setup-ghc
+      run: |
+        ghcup compile ghc -j8 \
+          -v ${{ inputs.ghc-version }} \
+          -b ${{ inputs.ghc-bootstrap-version }} \
+          -p ${PWD}/patches \
+          -c ${PWD}/build.mk \
+          -o ${{ inputs.ghc-version }}-fPIC \
+          -- --with-system-libffi
+        ghcup set ${{ inputs.ghc-version }}-fPIC
+      shell: bash
+      working-directory: vendor/ghc
+
+    - name: Upload GHCup logs
+      if: failure() && runner.os == 'Linux' && steps.setup-ghc.outcome != 'success'
+      uses: actions/upload-artifact@v3
+      with:
+        name: ghcup-logs
+        path: ${HOME}/.ghcup/logs
