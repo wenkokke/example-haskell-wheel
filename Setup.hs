@@ -1,21 +1,22 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
+import Control.Monad (when)
 import qualified Data.Map as Map
 import Distribution.Compat.Directory (doesPathExist)
 import Distribution.Compat.Prelude (isSpace, unless)
-import Distribution.PackageDescription (Benchmark (..), BuildInfo (..), Executable (..), ForeignLib (..), Library (..), PackageDescription (..), TestSuite (..), ComponentName (..), componentNameString, unUnqualComponentName)
+import Distribution.PackageDescription (Benchmark (..), BuildInfo (..), ComponentName (..), Executable (..), ForeignLib (..), Library (..), PackageDescription (..), TestSuite (..), componentNameString, unUnqualComponentName)
 import Distribution.Simple (UserHooks (..), defaultMainWithHooks, simpleUserHooks)
-import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..), componentBuildDir, ComponentLocalBuildInfo (..), showComponentName)
+import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo (..), LocalBuildInfo (..), componentBuildDir, showComponentName)
 import Distribution.Simple.Program (Program, ProgramDb, getDbProgramOutput, requireProgram, runDbProgram, simpleProgram)
 import Distribution.Simple.Setup (BuildFlags (..), ConfigFlags (..), configPrograms, emptyConfigFlags, fromFlagOrDefault)
-import Distribution.Simple.Utils (die', info, getDirectoryContentsRecursive)
+import Distribution.Simple.Utils (die', getDirectoryContentsRecursive, info)
 import Distribution.Utils.String (trim)
 import Distribution.Verbosity (Verbosity)
 import qualified Distribution.Verbosity as Verbosity (normal)
-import Control.Monad (when)
-import System.Info (os)
-import System.FilePath ((<.>), (</>))
 import System.Directory (copyFile)
+import System.FilePath ((<.>), (</>))
+import System.Info (os)
+import Text.Printf (printf)
 
 pythonPackagePath :: FilePath
 pythonPackagePath = "fib"
@@ -45,8 +46,8 @@ main =
         -- Copies the generated library to the Python package
         buildHook = \packageDescription localBuildInfo userHooks buildFlags -> do
           let verbosity = fromFlagOrDefault Verbosity.normal (buildVerbosity buildFlags)
-          copyForeignLib verbosity localBuildInfo
           buildHook simpleUserHooks packageDescription localBuildInfo userHooks buildFlags
+          copyForeignLib verbosity localBuildInfo
       }
 
 copyForeignLib :: Verbosity -> LocalBuildInfo -> IO ()
@@ -56,21 +57,21 @@ copyForeignLib verbosity localBuildInfo = do
   let sourcePath = foreignLibBuildDir </> sourceName
   let targetPath = pythonPackagePath </> pythonNativeModuleName <.> pythonLibExtension
   sourcePathExists <- doesPathExist sourcePath
-  unless sourcePathExists $ do
-    files <- getDirectoryContentsRecursive foreignLibBuildDir
-    die' verbosity . unlines $ "Could not find compiled library '" <> sourceName <> "' in " <> foreignLibBuildDir : files
+  unless sourcePathExists $
+    die' verbosity $
+      printf "Could not find compiled library '%s' in %s" sourceName foreignLibBuildDir
   copyFile sourcePath targetPath
 
 pythonLibExtension :: FilePath
 pythonLibExtension
   | System.Info.os == "mingw32" = "dll"
-  | otherwise                   = "so"
+  | otherwise = "so"
 
 sharedLibExtension :: FilePath
 sharedLibExtension
   | System.Info.os == "mingw32" = "dll"
-  | System.Info.os == "darwin"  = "dylib"
-  | otherwise                   = "so"
+  | System.Info.os == "darwin" = "dylib"
+  | otherwise = "so"
 
 findForeignLibNameAndBuildDir :: Verbosity -> LocalBuildInfo -> IO (String, FilePath)
 findForeignLibNameAndBuildDir verbosity localBuildInfo = do
@@ -88,11 +89,11 @@ findForeignLibNameAndBuildDir verbosity localBuildInfo = do
   return (foreignLibNameString, componentBuildDir localBuildInfo foreignLibLocalBuildInfo)
   where
     isForeignLibName :: ComponentName -> Bool
-    isForeignLibName CFLibName{} = True
+    isForeignLibName CFLibName {} = True
     isForeignLibName _ = False
 
     isForeignLibComponentLocalBuildInfo :: ComponentLocalBuildInfo -> Bool
-    isForeignLibComponentLocalBuildInfo FLibComponentLocalBuildInfo{} = True
+    isForeignLibComponentLocalBuildInfo FLibComponentLocalBuildInfo {} = True
     isForeignLibComponentLocalBuildInfo _ = False
 
 swigProgram :: Program
