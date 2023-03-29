@@ -1,0 +1,14 @@
+Index: ghc/compiler/GHC/Driver/Session.hs
+===================================================================
+--- ghc.orig/compiler/GHC/Driver/Session.hs
++++ ghc/compiler/GHC/Driver/Session.hs
+@@ -3858,6 +3858,9 @@ validHoleFitsImpliedGFlags
+ default_PIC :: Platform -> [GeneralFlag]
+ default_PIC platform =
+   case (platformOS platform, platformArch platform) of
++    -- Enable -fPIC by default on Linux x86_64
++    -- See: https://www.hobson.space/posts/haskell-foreign-library/
++    (OSLinux,   ArchX86_64)  -> [Opt_PIC]
+     -- Darwin always requires PIC.  Especially on more recent macOS releases
+     -- there will be a 4GB __ZEROPAGE that prevents us from using 32bit addresses
+     -- while we could work around this on x86_64 (like WINE does), we won't be

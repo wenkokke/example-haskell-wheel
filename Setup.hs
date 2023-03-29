@@ -8,7 +8,7 @@ import Distribution.Simple (UserHooks (..), defaultMainWithHooks, simpleUserHook
 import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..), componentBuildDir, ComponentLocalBuildInfo (..), showComponentName)
 import Distribution.Simple.Program (Program, ProgramDb, getDbProgramOutput, requireProgram, runDbProgram, simpleProgram)
 import Distribution.Simple.Setup (BuildFlags (..), ConfigFlags (..), configPrograms, emptyConfigFlags, fromFlagOrDefault)
-import Distribution.Simple.Utils (die', info)
+import Distribution.Simple.Utils (die', info, getDirectoryContentsRecursive)
 import Distribution.Utils.String (trim)
 import Distribution.Verbosity (Verbosity)
 import qualified Distribution.Verbosity as Verbosity (normal)
@@ -56,8 +56,9 @@ copyForeignLib verbosity localBuildInfo = do
   let sourcePath = foreignLibBuildDir </> sourceName
   let targetPath = pythonPackagePath </> pythonNativeModuleName <.> pythonLibExtension
   sourcePathExists <- doesPathExist sourcePath
-  unless sourcePathExists $
-    die' verbosity $ "Could not find compiled library '" <> sourceName <> "' in " <> foreignLibBuildDir
+  unless sourcePathExists $ do
+    files <- getDirectoryContentsRecursive foreignLibBuildDir
+    die' verbosity . unlines $ "Could not find compiled library '" <> sourceName <> "' in " <> foreignLibBuildDir : files
   copyFile sourcePath targetPath
 
 pythonLibExtension :: FilePath
