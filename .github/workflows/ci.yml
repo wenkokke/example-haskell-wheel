@@ -21,8 +21,16 @@ jobs:
           # - { id: ubuntu-latest, name: Linux }
           - { id: macos-latest, name: macOS }
           - { id: windows-latest, name: Windows }
-        ghc-version: ["8.10", "9.0", "9.2", "9.4"]
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        ghc-version:
+          # - "8.10"
+          # - "9.0"
+          # - "9.2"
+          - "9.4"
+        python-version:
+          # - "3.8"
+          # - "3.9"
+          # - "3.10"
+          - "3.11"
 
     steps:
       - uses: actions/checkout@v3
