@@ -2,7 +2,6 @@
 
 import Control.Monad (when, unless)
 import qualified Data.Map as Map
-import Distribution.Compat.Directory (doesPathExist)
 import Distribution.PackageDescription (Benchmark (..), BuildInfo (..), ComponentName (..), Executable (..), ForeignLib (..), Library (..), PackageDescription (..), TestSuite (..), componentNameString, unUnqualComponentName)
 import Distribution.Simple (UserHooks (..), defaultMainWithHooks, simpleUserHooks)
 import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo (..), LocalBuildInfo (..), componentBuildDir, showComponentName)
@@ -11,7 +10,7 @@ import Distribution.Simple.Setup (BuildFlags (..), ConfigFlags (..), configProgr
 import Distribution.Simple.Utils (die', getDirectoryContentsRecursive, info)
 import Distribution.Verbosity (Verbosity)
 import qualified Distribution.Verbosity as Verbosity (normal)
-import System.Directory (copyFile)
+import System.Directory (copyFile, doesFileExist, doesDirectoryExist)
 import System.FilePath ((<.>), (</>))
 import System.Info (os)
 import Text.Printf (printf)
@@ -55,7 +54,7 @@ copyForeignLib verbosity localBuildInfo = do
   let sourceName = "lib" <> foreignLibName <.> sharedLibExtension
   let sourcePath = foreignLibBuildDir </> sourceName
   let targetPath = pythonPackagePath </> pythonNativeModuleName <.> pythonLibExtension
-  sourcePathExists <- doesPathExist sourcePath
+  sourcePathExists <- doesFileExist sourcePath
   unless sourcePathExists $
     die' verbosity $
       printf "Could not find compiled library '%s' in %s" sourceName foreignLibBuildDir
@@ -117,23 +116,16 @@ pythonProgram = simpleProgram "python"
 
 findPythonIncludeDir :: Verbosity -> ProgramDb -> IO FilePath
 findPythonIncludeDir verbosity programDb = do
-  pythonOutput <- getDbProgramOutput verbosity pythonProgram programDb ["-c", printPythonIncludeDirScript]
+  pythonOutput <- getDbProgramOutput verbosity pythonProgram programDb ["-c", printPythonPlatformInclude]
   let pythonIncludeDir = trim pythonOutput
-  pythonIncludeDirExists <- doesPathExist pythonIncludeDir
+  pythonIncludeDirExists <- doesDirectoryExist pythonIncludeDir
   if pythonIncludeDirExists
     then return pythonIncludeDir
     else die' verbosity $ "Could not determine Python include directory. Found: " <> pythonIncludeDir
   where
-    printPythonIncludeDirScript :: String
-    printPythonIncludeDirScript =
-      unlines
-        [ "import os.path;",
-          "import platform;",
-          "import sys;",
-          "major, minor, _ = platform.python_version_tuple();",
-          "pytag = 'python%s.%s' % (major, minor);",
-          "print(os.path.join(sys.exec_prefix, 'include', pytag))"
-        ]
+    printPythonPlatformInclude :: String
+    printPythonPlatformInclude =
+      "import sysconfig; print(sysconfig.get_path('platinclude'))"
 
 -- See: https://github.com/ghc/packages-Cabal/blob/6f22f2a789fa23edb210a2591d74ea6a5f767872/Cabal/Distribution/Simple/Configure.hs#L1016-L1037
 addExtraIncludeDirs :: [FilePath] -> PackageDescription -> PackageDescription
