@@ -40,13 +40,13 @@ runs:
       id: setup-ghc
       run: |
         ghcup compile ghc \
+          --set \
           -v ${{ inputs.ghc-version }} \
           -b ${{ inputs.ghc-bootstrap-version }} \
           -p ${PWD}/patches \
           -c ${PWD}/build.mk \
           -o ${{ inputs.ghc-version }}-fPIC \
           -- --with-system-libffi
-        ghcup set ${{ inputs.ghc-version }}-fPIC
       shell: bash
       working-directory: vendor/ghc
 
