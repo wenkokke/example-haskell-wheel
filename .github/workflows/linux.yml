@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: Linux / GHC ${{ matrix.ghc.version }} / Python ${{ matrix.python.version }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        ghc:
+          - { version: "9.4.4", bootstrap-version: "9.0.2" }
+        python:
+          - { version: "3.11" }
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup GHC ${{ matrix.ghc.bootstrap-version }}
+        uses: haskell/actions/setup@v2
+        with:
+          ghc-version: ${{ matrix.ghc.bootstrap-version }}
+
+      - name: Install LLVM and Clang
+        uses: KyleMayes/install-llvm-action@v1
+        with:
+          version: "10.0"
+
+      - name: Setup GHC ${{ matrix.ghc.version }}
+        run: |
+          ghcup compile ghc \
+            -j8 \
+            -v ${{ matrix.ghc.version }} \
+            -b ${{ matrix.ghc.bootstrap-version }} \
+            -p ${PWD}/patches \
+            -c ${PWD}/build.mk \
+            -o ${{ matrix.ghc.version }}-fPIC \
+            -- \
+            --with-system-libffi
+          ghcup list
+        shell: sh
+        working-directory: vendor/ghc
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python.version }}
+
+      - name: Setup SWIG
+        run: sudo apt update && sudo apt -y install swig
+
+      - name: Build Python Native Module
+        run: cabal build
+
+      - name: Test Python Native Module
+        run: python fib/__main__.py
