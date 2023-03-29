@@ -1,5 +1,3 @@
-*_stub.h
-main
 dist
 dist-*
 cabal-dev
@@ -25,3 +23,8 @@ cabal.project.local~
 .ghc.environment.*
 .mypy_cache
 *.so
+
+# Generated files
+/fib/binding.py
+/fib/_binding.so
+/cbits/binding_wrap.c

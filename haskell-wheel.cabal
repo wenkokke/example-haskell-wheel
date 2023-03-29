@@ -8,9 +8,14 @@ license-file:       LICENSE
 author:             Wen Kokke
 maintainer:         wenkokke@users.noreply.github.com
 -- copyright:
-build-type:         Simple
+build-type:         Custom
 extra-doc-files:    CHANGELOG.md
 -- extra-source-files:
+
+custom-setup
+  setup-depends:
+    , base
+    , Cabal
 
 common warnings
   ghc-options: -Wall
@@ -27,5 +32,4 @@ foreign-library Fib
   c-sources:           cbits/binding_wrap.c
   hs-source-dirs:      src
   default-language:    Haskell2010
-  include-dirs:        /Users/keri/.pyenv/versions/3.10.10/include/python3.10/
   includes:            Python.h
