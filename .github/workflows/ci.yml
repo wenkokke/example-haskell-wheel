@@ -40,7 +40,7 @@ jobs:
       - name: Setup SWIG
         run: pip install swig
 
-      - name: Build Python Native Module10
+      - name: Build Python Native Module
         run: cabal build
 
       - name: Test Python Native Module
