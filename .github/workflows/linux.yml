@@ -23,8 +23,11 @@ jobs:
           - { version: "3.11" }
 
     steps:
-      - uses: actions/checkout@v3
-      - uses: ./.github/actions/setup-haskell
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Haskell
+        uses: ./.github/actions/setup-haskell
         with:
           ghc-version: ${{ matrix.ghc.version }}
           ghc-bootstrap-version: ${{ matrix.ghc.bootstrap-version }}
