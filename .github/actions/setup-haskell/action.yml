@@ -39,7 +39,7 @@ runs:
       if: runner.os == 'Linux'
       id: setup-ghc
       run: |
-        ghcup compile ghc -j8 \
+        ghcup compile ghc \
           -v ${{ inputs.ghc-version }} \
           -b ${{ inputs.ghc-bootstrap-version }} \
           -p ${PWD}/patches \
