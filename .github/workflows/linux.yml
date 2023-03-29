@@ -41,8 +41,9 @@ jobs:
             -c ${PWD}/build.mk \
             -o ${{ matrix.ghc.version }}-fPIC \
             -- \
-            --with-system-libffi
-          ghcup list
+            --with-system-libffi \
+            && \
+            ghcup set ${{ matrix.ghc.version }}-fPIC
         shell: sh
         working-directory: vendor/ghc
 
