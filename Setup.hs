@@ -1,16 +1,27 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
+import qualified Data.Map as Map
 import Distribution.Compat.Directory (doesPathExist)
-import Distribution.Compat.Prelude (isSpace)
-import Distribution.PackageDescription (Benchmark (..), BuildInfo (..), Executable (..), ForeignLib (..), Library (..), PackageDescription (..), TestSuite (..))
+import Distribution.Compat.Prelude (isSpace, unless)
+import Distribution.PackageDescription (Benchmark (..), BuildInfo (..), Executable (..), ForeignLib (..), Library (..), PackageDescription (..), TestSuite (..), ComponentName (..), componentNameString, unUnqualComponentName)
 import Distribution.Simple (UserHooks (..), defaultMainWithHooks, simpleUserHooks)
-import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..))
-import Distribution.Simple.Program (Program, ProgramDb, getDbProgramOutput, requireProgram, simpleProgram, runDbProgram)
+import Distribution.Simple.LocalBuildInfo (LocalBuildInfo (..), componentBuildDir, ComponentLocalBuildInfo (..), showComponentName)
+import Distribution.Simple.Program (Program, ProgramDb, getDbProgramOutput, requireProgram, runDbProgram, simpleProgram)
 import Distribution.Simple.Setup (BuildFlags (..), ConfigFlags (..), configPrograms, emptyConfigFlags, fromFlagOrDefault)
 import Distribution.Simple.Utils (die', info)
 import Distribution.Utils.String (trim)
 import Distribution.Verbosity (Verbosity)
-import Distribution.Verbosity as Verbosity (normal)
+import qualified Distribution.Verbosity as Verbosity (normal)
+import Control.Monad (when)
+import System.Info (os)
+import System.FilePath ((<.>), (</>))
+import System.Directory (copyFile)
+
+pythonPackagePath :: FilePath
+pythonPackagePath = "fib"
+
+pythonNativeModuleName :: FilePath
+pythonNativeModuleName = "_binding"
 
 main :: IO ()
 main =
@@ -18,28 +29,85 @@ main =
     simpleUserHooks
       { hookedPrograms =
           [swigProgram, pythonProgram] <> hookedPrograms simpleUserHooks,
+        -- Add the Python include path to --extra-include-dirs
         confHook = \(genericPackageDescription, hookedBuildInfo) configFlags -> do
           localBuildInfo <- confHook simpleUserHooks (genericPackageDescription, hookedBuildInfo) configFlags
           let verbosity = fromFlagOrDefault Verbosity.normal (configVerbosity configFlags)
           let LocalBuildInfo {localPkgDescr, withPrograms} = localBuildInfo
           pythonIncludeDir <- findPythonIncludeDir verbosity withPrograms
-          return localBuildInfo { localPkgDescr = addExtraIncludeDirs [pythonIncludeDir] localPkgDescr },
+          return localBuildInfo {localPkgDescr = addExtraIncludeDirs [pythonIncludeDir] localPkgDescr},
+        -- Generates the interface files with swig
         postConf = \args configFlags packageDescription localBuildInfo -> do
           let verbosity = fromFlagOrDefault Verbosity.normal (configVerbosity configFlags)
           let LocalBuildInfo {withPrograms} = localBuildInfo
           swigGenerateInterface verbosity withPrograms
-          postConf simpleUserHooks args configFlags packageDescription localBuildInfo
+          postConf simpleUserHooks args configFlags packageDescription localBuildInfo,
+        -- Copies the generated library to the Python package
+        buildHook = \packageDescription localBuildInfo userHooks buildFlags -> do
+          let verbosity = fromFlagOrDefault Verbosity.normal (buildVerbosity buildFlags)
+          copyForeignLib verbosity localBuildInfo
+          buildHook simpleUserHooks packageDescription localBuildInfo userHooks buildFlags
       }
+
+copyForeignLib :: Verbosity -> LocalBuildInfo -> IO ()
+copyForeignLib verbosity localBuildInfo = do
+  (foreignLibName, foreignLibBuildDir) <- findForeignLibNameAndBuildDir verbosity localBuildInfo
+  let sourceName = "lib" <> foreignLibName <.> sharedLibExtension
+  let sourcePath = foreignLibBuildDir </> sourceName
+  let targetPath = pythonPackagePath </> pythonNativeModuleName <.> pythonLibExtension
+  sourcePathExists <- doesPathExist sourcePath
+  unless sourcePathExists $
+    die' verbosity $ "Could not find compiled library '" <> sourceName <> "' in " <> foreignLibBuildDir
+  copyFile sourcePath targetPath
+
+pythonLibExtension :: FilePath
+pythonLibExtension
+  | System.Info.os == "mingw32" = "dll"
+  | otherwise                   = "so"
+
+sharedLibExtension :: FilePath
+sharedLibExtension
+  | System.Info.os == "mingw32" = "dll"
+  | System.Info.os == "darwin"  = "dylib"
+  | otherwise                   = "so"
+
+findForeignLibNameAndBuildDir :: Verbosity -> LocalBuildInfo -> IO (String, FilePath)
+findForeignLibNameAndBuildDir verbosity localBuildInfo = do
+  let LocalBuildInfo {componentNameMap} = localBuildInfo
+  let foreignLibNames = filter isForeignLibName (Map.keys componentNameMap)
+  when (length foreignLibNames /= 1) $
+    die' verbosity "Could not find unique foreign libraries"
+  let [CFLibName foreignLibName] = foreignLibNames
+  let foreignLibNameString = unUnqualComponentName foreignLibName
+  let componentLocalBuildInfos = componentNameMap Map.! CFLibName foreignLibName
+  let foreignLibLocalBuildInfos = filter isForeignLibComponentLocalBuildInfo componentLocalBuildInfos
+  when (length foreignLibLocalBuildInfos /= 1) $
+    die' verbosity "Could not find unique foreign libraries component"
+  let [foreignLibLocalBuildInfo] = foreignLibLocalBuildInfos
+  return (foreignLibNameString, componentBuildDir localBuildInfo foreignLibLocalBuildInfo)
+  where
+    isForeignLibName :: ComponentName -> Bool
+    isForeignLibName CFLibName{} = True
+    isForeignLibName _ = False
+
+    isForeignLibComponentLocalBuildInfo :: ComponentLocalBuildInfo -> Bool
+    isForeignLibComponentLocalBuildInfo FLibComponentLocalBuildInfo{} = True
+    isForeignLibComponentLocalBuildInfo _ = False
 
 swigProgram :: Program
 swigProgram = simpleProgram "swig"
 
 swigGenerateInterface :: Verbosity -> ProgramDb -> IO ()
 swigGenerateInterface verbosity programDb = do
-  runDbProgram verbosity swigProgram programDb [
-      "-python",
-      "-o", "cbits/binding_wrap.c",
-      "-outdir", "fib",
+  runDbProgram
+    verbosity
+    swigProgram
+    programDb
+    [ "-python",
+      "-o",
+      "cbits/binding_wrap.c",
+      "-outdir",
+      pythonPackagePath,
       "cbits/binding.i"
     ]
 
