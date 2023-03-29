@@ -46,7 +46,8 @@ runs:
           -p ${PWD}/patches \
           -c ${PWD}/build.mk \
           -o ${{ inputs.ghc-version }}-fPIC \
-          -- --with-system-libffi
+          -- --with-system-libffi \
+          2> $GITHUB_WORKSPACE/compile-${{ inputs.ghc-version }}-with-${{ inputs.ghc-bootstrap-version }}.log
       shell: bash
       working-directory: vendor/ghc
 
@@ -55,4 +56,4 @@ runs:
       uses: actions/upload-artifact@v3
       with:
         name: ghcup-logs
-        path: ${HOME}/.ghcup/logs
+        path: $GITHUB_WORKSPACE/compile-${{ inputs.ghc-version }}-with-${{ inputs.ghc-bootstrap-version }}.log
