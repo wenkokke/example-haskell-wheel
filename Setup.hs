@@ -1,22 +1,21 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-import Control.Monad (when)
+import Control.Monad (when, unless)
 import qualified Data.Map as Map
 import Distribution.Compat.Directory (doesPathExist)
-import Distribution.Compat.Prelude (isSpace, unless)
 import Distribution.PackageDescription (Benchmark (..), BuildInfo (..), ComponentName (..), Executable (..), ForeignLib (..), Library (..), PackageDescription (..), TestSuite (..), componentNameString, unUnqualComponentName)
 import Distribution.Simple (UserHooks (..), defaultMainWithHooks, simpleUserHooks)
 import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo (..), LocalBuildInfo (..), componentBuildDir, showComponentName)
 import Distribution.Simple.Program (Program, ProgramDb, getDbProgramOutput, requireProgram, runDbProgram, simpleProgram)
 import Distribution.Simple.Setup (BuildFlags (..), ConfigFlags (..), configPrograms, emptyConfigFlags, fromFlagOrDefault)
 import Distribution.Simple.Utils (die', getDirectoryContentsRecursive, info)
-import Distribution.Utils.String (trim)
 import Distribution.Verbosity (Verbosity)
 import qualified Distribution.Verbosity as Verbosity (normal)
 import System.Directory (copyFile)
 import System.FilePath ((<.>), (</>))
 import System.Info (os)
 import Text.Printf (printf)
+import Data.Char (isSpace)
 
 pythonPackagePath :: FilePath
 pythonPackagePath = "fib"
@@ -118,22 +117,25 @@ pythonProgram = simpleProgram "python"
 
 findPythonIncludeDir :: Verbosity -> ProgramDb -> IO FilePath
 findPythonIncludeDir verbosity programDb = do
-  pythonOutput <- getDbProgramOutput verbosity pythonProgram programDb ["-c", script]
+  pythonOutput <- getDbProgramOutput verbosity pythonProgram programDb ["-c", printPythonIncludeDirScript]
   let pythonIncludeDir = trim pythonOutput
   pythonIncludeDirExists <- doesPathExist pythonIncludeDir
   if pythonIncludeDirExists
     then return pythonIncludeDir
     else die' verbosity $ "Could not determine Python include directory. Found: " <> pythonIncludeDir
   where
-    script :: String
-    script =
+    printPythonIncludeDirScript :: String
+    printPythonIncludeDirScript =
       unlines
-        [ "import sys;",
+        [ "import os.path;",
           "import platform;",
+          "import sys;",
           "major, minor, _ = platform.python_version_tuple();",
-          "print('%s/include/python%s.%s' % (sys.exec_prefix, major, minor));"
+          "pytag = 'python%s.%s' % (major, minor);",
+          "print(os.path.join(sys.exec_prefix, 'include', pytag))"
         ]
 
+-- See: https://github.com/ghc/packages-Cabal/blob/6f22f2a789fa23edb210a2591d74ea6a5f767872/Cabal/Distribution/Simple/Configure.hs#L1016-L1037
 addExtraIncludeDirs :: [FilePath] -> PackageDescription -> PackageDescription
 addExtraIncludeDirs extraIncludeDirs packageDescription =
   let extraBuildInfo = mempty {includeDirs = extraIncludeDirs}
@@ -150,3 +152,8 @@ addExtraIncludeDirs extraIncludeDirs packageDescription =
           testSuites = modifyTestsuite `map` testSuites packageDescription,
           benchmarks = modifyBenchmark `map` benchmarks packageDescription
         }
+
+-- See: https://stackoverflow.com/a/6270337
+trim :: String -> String
+trim = f . f
+   where f = reverse . dropWhile isSpace
