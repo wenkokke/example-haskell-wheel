@@ -1,5 +1,5 @@
 cabal-version:      3.0
-name:               HSfib-wheel
+name:               fib
 version:            0.1.0
 description:
   An experiment in publishing a Haskell library as a Python Wheel.

@@ -1,16 +1,16 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-import Control.Monad (when)
+import Control.Monad (when, unless)
 import Data.Char (toLower)
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf, stripPrefix)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
-import Distribution.PackageDescription (ComponentName (..), ForeignLib (..), PackageDescription (..), showComponentName, unUnqualComponentName)
+import Distribution.PackageDescription (ComponentName (..), ForeignLib (..), PackageDescription (..), showComponentName, unUnqualComponentName, unPackageName)
 import Distribution.Pretty (Pretty (..))
 import Distribution.Simple (PackageIdentifier (..), UserHooks (..), defaultMainWithHooks, simpleUserHooks, versionNumbers)
 import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo, LocalBuildInfo (..), componentBuildDir)
-import Distribution.Simple.Program (ConfiguredProgram (..), Program, ProgramDb, requireProgram, runDbProgram, runProgram, simpleProgram)
+import Distribution.Simple.Program (ConfiguredProgram (..), Program, ProgramDb, requireProgram, runDbProgram, runProgram, simpleProgram, getDbProgramOutput, needProgram)
 import Distribution.Simple.Setup (BuildFlags (..), fromFlagOrDefault)
 import Distribution.Simple.Utils (die', findFirstFile)
 import Distribution.Utils.Path (getSymbolicPath)
@@ -28,48 +28,68 @@ type HaskellLibraryName = String
 pythonProgram :: Program
 pythonProgram = simpleProgram "python"
 
-installNameToolProgram :: Program
-installNameToolProgram = simpleProgram "install_name_tool"
+pipxProgram :: Program
+pipxProgram = simpleProgram "pipx"
 
 main :: IO ()
 main =
   defaultMainWithHooks
     simpleUserHooks
-      { hookedPrograms = [pythonProgram, installNameToolProgram],
+      { hookedPrograms = [pythonProgram, pipxProgram],
         -- Generates a Python package
         postBuild = \args buildFlags packageDescription localBuildInfo -> do
           let verbosity = fromFlagOrDefault normal (buildVerbosity buildFlags)
-          (foreignLibName, foreignLibDir) <- findForeignLibNameAndBuildDir verbosity packageDescription localBuildInfo
-          let pythonPackageName = toPythonPackageName foreignLibName
+          -- Get package information
+          let PackageDescription {package, author, maintainer, description, licenseRaw} = packageDescription
+          let PackageIdentifier {pkgName, pkgVersion} = package
+          let packageName = unPackageName pkgName
+          let license = render $ either pretty pretty licenseRaw
+          let version = intercalate "." (map show (versionNumbers pkgVersion))
+
+          -- Get build information
+          (foreignLibName, foreignLibDir) <- findForeignLibInfo verbosity packageDescription localBuildInfo
+          let LocalBuildInfo {withPrograms} = localBuildInfo
 
           -- Create pyproject.toml
-          let PackageDescription {package, author, maintainer, description, licenseRaw} = packageDescription
-          let PackageIdentifier {pkgVersion} = package
-          let license = either (render . pretty) (render . pretty) licenseRaw
-          let version = intercalate "." (map show (versionNumbers pkgVersion))
-          writeFile "pyproject.toml" (pyprojectTomlTemplate pythonPackageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) license)
-
+          writeFile "pyproject.toml" (pyprojectTomlTemplate packageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) license)
           -- Create build.py
-          let LocalBuildInfo {withPrograms} = localBuildInfo
-          let python = runDbProgram verbosity pythonProgram withPrograms
-          let pipx = python . (["-m", "pipx"] <>)
-          writeFile "build.py" (buildPyTemplate pythonPackageName foreignLibName foreignLibDir)
-
+          writeFile "build.py" (buildPyTemplate packageName foreignLibName foreignLibDir)
           -- Build the wheel:
-          pipx ["run", "--spec", "build", "pyproject-build", "--wheel"]
-
+          pipx verbosity withPrograms ["run", "--spec", "build", "pyproject-build", "--wheel"]
           -- Check the wheel:
-          pipx ["run", "twine", "check", "dist/*.whl"]
+          pipx verbosity withPrograms ["run", "twine", "check", "dist/*.whl"]
       }
 
-pyprojectTomlTemplate pythonPackageName version authorName authorEmail description license =
+python :: Verbosity -> ProgramDb -> [String] -> IO ()
+python verbosity = runDbProgram verbosity pythonProgram
+
+pipx :: Verbosity -> ProgramDb -> [String] -> IO ()
+pipx verbosity programDb args = do
+  maybePipxProgram <- needProgram verbosity pipxProgram programDb
+  case maybePipxProgram of
+    Nothing -> do
+      pipxExists <- doesPipxExist verbosity programDb
+      unless pipxExists . die' verbosity $
+        "The program 'pipx' is required but it could not be found."
+      runDbProgram verbosity pythonProgram programDb ("-m" : "pipx" : args)
+    Just (pipxProgram, programDb) -> do
+      runProgram verbosity pipxProgram args
+
+doesPipxExist :: Verbosity -> ProgramDb -> IO Bool
+doesPipxExist verbosity programDb = do
+  output <- getDbProgramOutput verbosity pythonProgram programDb
+    ["-c", "import importlib.util; print(importlib.util.find_spec('pipx') is not None)"]
+  return $ output == "True"
+
+pyprojectTomlTemplate :: String -> String -> String -> String -> String -> String -> String
+pyprojectTomlTemplate packageName version authorName authorEmail description license =
   unlines
     [ "[build-system]",
       "requires = ['delocate', 'poetry-core>=1.5.0']",
       "build-backend = 'poetry.core.masonry.api'",
       "",
       "[tool.poetry]",
-      "name = '" <> pythonPackageName <> "'",
+      "name = '" <> packageName <> "'",
       "version = '" <> version <> "'",
       "authors = ['" <> authorName <> " <" <> authorEmail <> ">']",
       "description = '" <> description <> "'",
@@ -79,9 +99,9 @@ pyprojectTomlTemplate pythonPackageName version authorName authorEmail descripti
       "  # Build script must be included in the sdist",
       "  { path = 'build.py', format = 'sdist' },",
       "  # C extensions must be included in the wheel",
-      "  { path = '" <> pythonPackageName <> "/*.so', format = 'wheel' },",
-      "  { path = '" <> pythonPackageName <> "/*.dylib', format = 'wheel' },",
-      "  { path = '" <> pythonPackageName <> "/*.pyd', format = 'wheel' },",
+      "  { path = '" <> packageName <> "/*.so', format = 'wheel' },",
+      "  { path = '" <> packageName <> "/*.dylib', format = 'wheel' },",
+      "  { path = '" <> packageName <> "/*.pyd', format = 'wheel' },",
       "]",
       "",
       "[tool.poetry.build]",
@@ -92,7 +112,8 @@ pyprojectTomlTemplate pythonPackageName version authorName authorEmail descripti
       "fib = 'fib:main'"
     ]
 
-buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
+buildPyTemplate :: String -> String -> String -> String
+buildPyTemplate packageName foreignLibName foreignLibDir =
   unlines
     [ "import delocate",
       "from distutils.command.build_ext import build_ext",
@@ -103,20 +124,20 @@ buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
       "",
       "ext_modules = [",
       "    Extension(",
-      "        name='" <> pythonPackageName <> "._binding',",
+      "        name='" <> packageName <> "._binding',",
       "        libraries=['" <> foreignLibName <> "'],",
       "        library_dirs=['" <> foreignLibDir <> "'],",
-      "        sources=['./" <> pythonPackageName <> "/binding.i'],",
+      "        sources=['./" <> packageName <> "/binding.i'],",
       "    )",
       "]",
       "",
       "",
       "def build():",
       "    distribution = Distribution({",
-      "      'name': '" <> pythonPackageName <> "',",
+      "      'name': '" <> packageName <> "',",
       "      'ext_modules': ext_modules",
       "})",
-      "    distribution.package_dir = '" <> pythonPackageName <> "'",
+      "    distribution.package_dir = '" <> packageName <> "'",
       "",
       "    cmd = build_ext(distribution)",
       "    cmd.ensure_finalized()",
@@ -134,31 +155,15 @@ buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
       "    # See: https://github.com/pypa/cibuildwheel/issues/816",
       "    if platform.system() == 'Darwin':",
       "        os.environ['DYLD_LIBRARY_PATH'] = '"<> foreignLibDir <>"'",
-      "        delocate.delocate_path('"<> pythonPackageName <>"', '"<> pythonPackageName <>"')",
+      "        delocate.delocate_path('"<> packageName <>"', '"<> packageName <>"')",
       "",
       "if __name__ == '__main__':",
       "    build()",
       ""
     ]
 
-toPythonPackageName :: HaskellLibraryName -> PythonPackageName
-toPythonPackageName foreignLibName = map toLower (fromMaybe foreignLibName (stripPrefix "HS" foreignLibName))
-
-fixModuleRpathOnMacOS :: Verbosity -> ProgramDb -> PythonPackageName -> HaskellLibraryName -> FilePath -> IO ()
-fixModuleRpathOnMacOS verbosity programDb pythonPackageName foreignLibName foreignLibDir = do
-  let installNameTool = runDbProgram verbosity installNameToolProgram programDb
-  let python = runDbProgram verbosity pythonProgram programDb
-  let pipx = python . (["-m", "pipx"] <>)
-  let foreignLibFullName = "lib" <> foreignLibName <.> "dylib"
-  let isBindingLibName libName = "_binding" `isPrefixOf` libName && ".so" `isSuffixOf` libName
-  bindingLibFullNames <- filter isBindingLibName <$> getDirectoryContents pythonPackageName
-  when (length bindingLibFullNames /= 1) $
-    die' verbosity $
-      "Could not find unique Python extension library: " <> show bindingLibFullNames
-  pipx ["run", "--spec", "delocate", "delocate-wheel", "dist/*.whl"]
-
-findForeignLibNameAndBuildDir :: Verbosity -> PackageDescription -> LocalBuildInfo -> IO (HaskellLibraryName, FilePath)
-findForeignLibNameAndBuildDir verbosity packageDescription localBuildInfo = do
+findForeignLibInfo :: Verbosity -> PackageDescription -> LocalBuildInfo -> IO (HaskellLibraryName, FilePath)
+findForeignLibInfo verbosity packageDescription localBuildInfo = do
   let PackageDescription {foreignLibs} = packageDescription
   when (length foreignLibs /= 1) $
     die' verbosity "Could not find unique foreign library"
