@@ -43,18 +43,27 @@ main =
           -- Get package information
           let PackageDescription {package, author, maintainer, description, licenseRaw} = packageDescription
           let PackageIdentifier {pkgName, pkgVersion} = package
-          let packageName = unPackageName pkgName
+          let package = unPackageName pkgName
           let license = render $ either pretty pretty licenseRaw
           let version = intercalate "." (map show (versionNumbers pkgVersion))
 
           -- Get build information
-          (foreignLibName, foreignLibDir) <- findForeignLibInfo verbosity packageDescription localBuildInfo
+          (library, libraryDir) <- findForeignLibInfo verbosity packageDescription localBuildInfo
           let LocalBuildInfo {withPrograms} = localBuildInfo
 
           -- Create pyproject.toml, build.py, and paths.py:
-          writeFile "pyproject.toml" (pyprojectTomlTemplate packageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) license)
-          writeFile "build.py" (buildPyTemplate packageName foreignLibName foreignLibDir)
-          writeFile "paths.py" (pathsPyTemplate foreignLibDir)
+          writeFile "pyproject.toml" $
+            pyprojectTomlTemplate
+              (escape package)
+              (escape version)
+              (escape $ fromShortText author)
+              (escape $ fromShortText maintainer)
+              (escape $ fromShortText description)
+              (escape license)
+          writeFile "build.py" $
+            buildPyTemplate (escape package) (escape library)
+          writeFile "paths.py" $
+            pathsPyTemplate (escape libraryDir)
 
           -- Build the wheel:
           pipx verbosity withPrograms ["run", "--spec", "build", "pyproject-build", "--wheel"]
@@ -120,19 +129,13 @@ pyprojectTomlTemplate packageName version authorName authorEmail description lic
     ]
 
 pathsPyTemplate :: String -> String
-pathsPyTemplate foreignLibDir =
+pathsPyTemplate libraryDir =
   unlines
-    [ "extra_library_dirs = ['" <> escape foreignLibDir <> "']"
+    [ "extra_library_dirs = ['" <> libraryDir <> "']"
     ]
-    where
-      escape :: String -> String
-      escape [] = []
-      escape ('\\' : cs) = '\\' : '\\' : escape cs
-      escape ('\'' : cs) = '\\' : '\'' : escape cs
-      escape (char : cs) = char        : escape cs
 
-buildPyTemplate :: String -> String -> String -> String
-buildPyTemplate packageName foreignLibName foreignLibDir =
+buildPyTemplate :: String -> String -> String
+buildPyTemplate package library =
   unlines
     [ "from distutils.command.build_ext import build_ext",
       "from distutils.core import Distribution, Extension",
@@ -146,20 +149,20 @@ buildPyTemplate packageName foreignLibName foreignLibDir =
       "",
       "ext_modules = [",
       "    Extension(",
-      "        name='" <> packageName <> "._binding',",
-      "        libraries=['" <> foreignLibName <> "'],",
+      "        name='" <> package <> "._binding',",
+      "        libraries=['" <> library <> "'],",
       "        library_dirs=paths.extra_library_dirs,",
-      "        sources=['./" <> packageName <> "/binding.i'],",
+      "        sources=['./" <> package <> "/binding.i'],",
       "    )",
       "]",
       "",
       "",
       "def build():",
       "    distribution = Distribution({",
-      "      'name': '" <> packageName <> "',",
+      "      'name': '" <> package <> "',",
       "      'ext_modules': ext_modules",
       "})",
-      "    distribution.package_dir = '" <> packageName <> "'",
+      "    distribution.package_dir = '" <> package <> "'",
       "",
       "    cmd = build_ext(distribution)",
       "    cmd.ensure_finalized()",
@@ -178,7 +181,7 @@ buildPyTemplate packageName foreignLibName foreignLibDir =
       "    if platform.system() == 'Darwin':",
       "        os.environ['DYLD_LIBRARY_PATH'] = os.pathsep.join(paths.extra_library_dirs)",
       "        import delocate",
-      "        delocate.delocate_path('" <> packageName <> "', '" <> packageName <> "')",
+      "        delocate.delocate_path('" <> package <> "', '" <> package <> "')",
       "",
       "if __name__ == '__main__':",
       "    build()",
@@ -197,3 +200,10 @@ findForeignLibInfo verbosity packageDescription localBuildInfo = do
     die' verbosity "Could not find unique foreign libraries component"
   let [componentLocalBuildInfo] = componentLocalBuildInfos
   return (unUnqualComponentName foreignLibName, componentBuildDir localBuildInfo componentLocalBuildInfo)
+
+-- | Escape a string to print as a Python single-quote string.
+escape :: String -> String
+escape [] = []
+escape ('\\' : cs) = '\\' : '\\' : escape cs
+escape ('\'' : cs) = '\\' : '\'' : escape cs
+escape (char : cs) = char : escape cs
