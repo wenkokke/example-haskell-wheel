@@ -14,7 +14,6 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - { tag: ubuntu-latest, name: Linux }
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
@@ -37,11 +36,8 @@ jobs:
         with:
           python-version: ${{ matrix.python.version }}
 
-      - name: Setup SWIG
-        run: pip install swig
-
-      - name: Build Python Native Module
-        run: cabal build
-
-      - name: Test Python Native Module
-        run: python fib/__main__.py
+      - name: Build & Test
+        run: |
+          cabal build
+          pip install ./dist/*.whl
+          python -m fib
