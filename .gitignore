@@ -23,6 +23,7 @@ cabal.project.local~
 .ghc.environment.*
 .mypy_cache
 *.so
+*.dylib
 
 # Generated files
 /fib/binding.py
