@@ -27,4 +27,6 @@ cabal.project.local~
 # Generated files
 /fib/binding.py
 /fib/_binding.so
-/cbits/binding_wrap.c
+/fib/binding_wrap.c
+/build/
+/build.py

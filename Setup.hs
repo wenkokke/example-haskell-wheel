@@ -1,151 +1,165 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-import Control.Monad (when, unless)
+import Control.Monad (when)
+import Data.Char (toLower)
+import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf, stripPrefix)
+import Data.Map (Map)
 import qualified Data.Map as Map
-import Distribution.PackageDescription (Benchmark (..), BuildInfo (..), ComponentName (..), Executable (..), ForeignLib (..), Library (..), PackageDescription (..), TestSuite (..), componentNameString, unUnqualComponentName)
-import Distribution.Simple (UserHooks (..), defaultMainWithHooks, simpleUserHooks)
-import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo (..), LocalBuildInfo (..), componentBuildDir, showComponentName)
-import Distribution.Simple.Program (Program, ProgramDb, getDbProgramOutput, requireProgram, runDbProgram, simpleProgram)
-import Distribution.Simple.Setup (BuildFlags (..), ConfigFlags (..), configPrograms, emptyConfigFlags, fromFlagOrDefault)
-import Distribution.Simple.Utils (die', getDirectoryContentsRecursive, info)
-import Distribution.Verbosity (Verbosity)
-import qualified Distribution.Verbosity as Verbosity (normal)
-import System.Directory (copyFile, doesFileExist, doesDirectoryExist)
+import Data.Maybe (fromMaybe)
+import Distribution.PackageDescription (ComponentName (..), ForeignLib (..), PackageDescription (..), showComponentName, unUnqualComponentName)
+import Distribution.Simple (PackageIdentifier (..), UserHooks (..), defaultMainWithHooks, simpleUserHooks, versionNumbers)
+import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo, LocalBuildInfo (..), componentBuildDir)
+import Distribution.Simple.Program (Program, ProgramDb, runDbProgram, simpleProgram)
+import Distribution.Simple.Setup (BuildFlags (..), fromFlagOrDefault)
+import Distribution.Simple.Utils (die', findFirstFile)
+import Distribution.Utils.Path (getSymbolicPath)
+import Distribution.Utils.ShortText (fromShortText)
+import Distribution.Verbosity (Verbosity, normal)
+import System.Directory (getDirectoryContents)
 import System.FilePath ((<.>), (</>))
 import System.Info (os)
-import Text.Printf (printf)
-import Data.Char (isSpace)
 
-pythonPackagePath :: FilePath
-pythonPackagePath = "fib"
+type PythonPackageName = FilePath
 
-pythonNativeModuleName :: FilePath
-pythonNativeModuleName = "_binding"
+type HaskellLibraryName = String
+
+pythonProgram :: Program
+pythonProgram = simpleProgram "python"
+
+installNameToolProgram :: Program
+installNameToolProgram = simpleProgram "install_name_tool"
 
 main :: IO ()
 main =
   defaultMainWithHooks
     simpleUserHooks
-      { hookedPrograms =
-          [swigProgram, pythonProgram] <> hookedPrograms simpleUserHooks,
-        -- Add the Python include path to --extra-include-dirs
-        confHook = \(genericPackageDescription, hookedBuildInfo) configFlags -> do
-          localBuildInfo <- confHook simpleUserHooks (genericPackageDescription, hookedBuildInfo) configFlags
-          let verbosity = fromFlagOrDefault Verbosity.normal (configVerbosity configFlags)
-          let LocalBuildInfo {localPkgDescr, withPrograms} = localBuildInfo
-          pythonIncludeDir <- findPythonIncludeDir verbosity withPrograms
-          return localBuildInfo {localPkgDescr = addExtraIncludeDirs [pythonIncludeDir] localPkgDescr},
-        -- Generates the interface files with swig
-        postConf = \args configFlags packageDescription localBuildInfo -> do
-          let verbosity = fromFlagOrDefault Verbosity.normal (configVerbosity configFlags)
+      { hookedPrograms = [pythonProgram, installNameToolProgram],
+        -- Generates a Python package
+        postBuild = \args buildFlags packageDescription localBuildInfo -> do
+          let verbosity = fromFlagOrDefault normal (buildVerbosity buildFlags)
+          (foreignLibName, foreignLibDir) <- findForeignLibNameAndBuildDir verbosity packageDescription localBuildInfo
+          let pythonPackageName = toPythonPackageName foreignLibName
+
+          -- Create pyproject.toml
+          let PackageDescription {package, author, maintainer, description, licenseFiles} = packageDescription
+          when (length licenseFiles /= 1) $
+            die' verbosity "Could not find unique license file"
+          let PackageIdentifier {pkgVersion} = package
+          let version = intercalate "." (map show (versionNumbers pkgVersion))
+          let [licenseFile] = map getSymbolicPath licenseFiles
+          writeFile "pyproject.toml" (pyprojectTomlTemplate pythonPackageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) licenseFile)
+
+          -- Create build.py
           let LocalBuildInfo {withPrograms} = localBuildInfo
-          swigGenerateInterface verbosity withPrograms
-          postConf simpleUserHooks args configFlags packageDescription localBuildInfo,
-        -- Copies the generated library to the Python package
-        buildHook = \packageDescription localBuildInfo userHooks buildFlags -> do
-          let verbosity = fromFlagOrDefault Verbosity.normal (buildVerbosity buildFlags)
-          buildHook simpleUserHooks packageDescription localBuildInfo userHooks buildFlags
-          copyForeignLib verbosity localBuildInfo
+          let python = runDbProgram verbosity pythonProgram withPrograms
+          let pipx = python . (["-m", "pipx"] <>)
+          writeFile "build.py" (buildPyTemplate pythonPackageName foreignLibName foreignLibDir)
+
+          -- Create setup.py
+          writeFile "setup.py" setupPyTemplate
+
+          -- Build the wheel:
+          -- pipx ["run", "--spec", "build", "pyproject-build", "--wheel"]
+
+          -- Workaround for bug on macOS:
+          -- when (System.Info.os == "darwin") $
+          --   fixModuleRpathOnMacOS verbosity withPrograms pythonPackageName foreignLibName foreignLibDir
+
+          -- Check the wheel:
+          -- pipx ["run", "twine", "check", "dist/*.whl"]
       }
 
-copyForeignLib :: Verbosity -> LocalBuildInfo -> IO ()
-copyForeignLib verbosity localBuildInfo = do
-  (foreignLibName, foreignLibBuildDir) <- findForeignLibNameAndBuildDir verbosity localBuildInfo
-  let sourceName = "lib" <> foreignLibName <.> sharedLibExtension
-  let sourcePath = foreignLibBuildDir </> sourceName
-  let targetPath = pythonPackagePath </> pythonNativeModuleName <.> pythonLibExtension
-  sourcePathExists <- doesFileExist sourcePath
-  unless sourcePathExists $
-    die' verbosity $
-      printf "Could not find compiled library '%s' in %s" sourceName foreignLibBuildDir
-  copyFile sourcePath targetPath
-
-pythonLibExtension :: FilePath
-pythonLibExtension
-  | System.Info.os == "mingw32" = "dll"
-  | otherwise = "so"
-
-sharedLibExtension :: FilePath
-sharedLibExtension
-  | System.Info.os == "mingw32" = "dll"
-  | System.Info.os == "darwin" = "dylib"
-  | otherwise = "so"
-
-findForeignLibNameAndBuildDir :: Verbosity -> LocalBuildInfo -> IO (String, FilePath)
-findForeignLibNameAndBuildDir verbosity localBuildInfo = do
-  let LocalBuildInfo {componentNameMap} = localBuildInfo
-  let foreignLibNames = filter isForeignLibName (Map.keys componentNameMap)
-  when (length foreignLibNames /= 1) $
-    die' verbosity "Could not find unique foreign libraries"
-  let [CFLibName foreignLibName] = foreignLibNames
-  let foreignLibNameString = unUnqualComponentName foreignLibName
-  let componentLocalBuildInfos = componentNameMap Map.! CFLibName foreignLibName
-  let foreignLibLocalBuildInfos = filter isForeignLibComponentLocalBuildInfo componentLocalBuildInfos
-  when (length foreignLibLocalBuildInfos /= 1) $
-    die' verbosity "Could not find unique foreign libraries component"
-  let [foreignLibLocalBuildInfo] = foreignLibLocalBuildInfos
-  return (foreignLibNameString, componentBuildDir localBuildInfo foreignLibLocalBuildInfo)
-  where
-    isForeignLibName :: ComponentName -> Bool
-    isForeignLibName CFLibName {} = True
-    isForeignLibName _ = False
-
-    isForeignLibComponentLocalBuildInfo :: ComponentLocalBuildInfo -> Bool
-    isForeignLibComponentLocalBuildInfo FLibComponentLocalBuildInfo {} = True
-    isForeignLibComponentLocalBuildInfo _ = False
-
-swigProgram :: Program
-swigProgram = simpleProgram "swig"
-
-swigGenerateInterface :: Verbosity -> ProgramDb -> IO ()
-swigGenerateInterface verbosity programDb = do
-  runDbProgram
-    verbosity
-    swigProgram
-    programDb
-    [ "-python",
-      "-o",
-      "cbits/binding_wrap.c",
-      "-outdir",
-      pythonPackagePath,
-      "cbits/binding.i"
+pyprojectTomlTemplate pythonPackageName version authorName authorEmail description licenseFile =
+  unlines
+    [ "[project]",
+      "name = '" <> pythonPackageName <> "'",
+      "version = '" <> version <> "'",
+      "authors = [{ name = '" <> authorName <> "', email = '" <> authorEmail <> "' }]",
+      "description = '" <> description <> "'",
+      "license = { file = '" <> licenseFile <> "' }",
+      "",
+      "[build-system]",
+      "requires = ['setuptools']",
+      "build-backend = 'setuptools.build_meta'"
     ]
 
-pythonProgram :: Program
-pythonProgram = simpleProgram "python"
+setupPyTemplate =
+  unlines
+    [
+      "import setuptools",
+      "import build",
+      "setuptools.setup(ext_modules=build.ext_modules)"
+    ]
 
-findPythonIncludeDir :: Verbosity -> ProgramDb -> IO FilePath
-findPythonIncludeDir verbosity programDb = do
-  pythonOutput <- getDbProgramOutput verbosity pythonProgram programDb ["-c", printPythonPlatformInclude]
-  let pythonIncludeDir = trim pythonOutput
-  pythonIncludeDirExists <- doesDirectoryExist pythonIncludeDir
-  if pythonIncludeDirExists
-    then return pythonIncludeDir
-    else die' verbosity $ "Could not determine Python include directory. Found: " <> pythonIncludeDir
-  where
-    printPythonPlatformInclude :: String
-    printPythonPlatformInclude =
-      "import sysconfig; print(sysconfig.get_path('platinclude'))"
+buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
+  unlines
+    [ "import os",
+      "import shutil",
+      "from distutils.command.build_ext import build_ext",
+      "from distutils.core import Distribution, Extension",
+      "",
+      "ext_modules = [",
+      "    Extension(",
+      "        name='" <> pythonPackageName <> "._binding',",
+      "        libraries=['" <> foreignLibName <> "'],",
+      "        library_dirs=['" <> foreignLibDir <> "'],",
+      "        sources=['./" <> pythonPackageName <> "/binding.i'],",
+      "    )",
+      "]",
+      "",
+      "",
+      "def build():",
+      "    distribution = Distribution({",
+      "      'name': '" <> pythonPackageName <> "',",
+      "      'ext_modules': ext_modules",
+      "})",
+      "    distribution.package_dir = '" <> pythonPackageName <> "'",
+      "",
+      "    cmd = build_ext(distribution)",
+      "    cmd.ensure_finalized()",
+      "    cmd.run()",
+      "",
+      "    # Copy built extensions back to the project",
+      "    for output in cmd.get_outputs():",
+      "        relative_extension = os.path.relpath(output, cmd.build_lib)",
+      "        shutil.copyfile(output, relative_extension)",
+      "        mode = os.stat(relative_extension).st_mode",
+      "        mode |= (mode & 0o444) >> 2",
+      "        os.chmod(relative_extension, mode)",
+      "",
+      "",
+      "if __name__ == '__main__':",
+      "    build()",
+      ""
+    ]
 
--- See: https://github.com/ghc/packages-Cabal/blob/6f22f2a789fa23edb210a2591d74ea6a5f767872/Cabal/Distribution/Simple/Configure.hs#L1016-L1037
-addExtraIncludeDirs :: [FilePath] -> PackageDescription -> PackageDescription
-addExtraIncludeDirs extraIncludeDirs packageDescription =
-  let extraBuildInfo = mempty {includeDirs = extraIncludeDirs}
-      modifyLib l = l {libBuildInfo = libBuildInfo l <> extraBuildInfo}
-      modifyExecutable e = e {buildInfo = buildInfo e <> extraBuildInfo}
-      modifyForeignLib f = f {foreignLibBuildInfo = foreignLibBuildInfo f <> extraBuildInfo}
-      modifyTestsuite t = t {testBuildInfo = testBuildInfo t <> extraBuildInfo}
-      modifyBenchmark b = b {benchmarkBuildInfo = benchmarkBuildInfo b <> extraBuildInfo}
-   in packageDescription
-        { library = modifyLib `fmap` library packageDescription,
-          subLibraries = modifyLib `map` subLibraries packageDescription,
-          executables = modifyExecutable `map` executables packageDescription,
-          foreignLibs = modifyForeignLib `map` foreignLibs packageDescription,
-          testSuites = modifyTestsuite `map` testSuites packageDescription,
-          benchmarks = modifyBenchmark `map` benchmarks packageDescription
-        }
+fixModuleRpathOnMacOS :: Verbosity -> ProgramDb -> PythonPackageName -> HaskellLibraryName -> FilePath -> IO ()
+fixModuleRpathOnMacOS verbosity programDb pythonPackageName foreignLibName foreignLibDir = do
+  let installNameTool = runDbProgram verbosity installNameToolProgram programDb
+  let python = runDbProgram verbosity pythonProgram programDb
+  let pipx = python . (["-m", "pipx"] <>)
+  let foreignLibFullName = "lib" <> foreignLibName <.> "dylib"
+  let isBindingLibName libName = "_binding" `isPrefixOf` libName && ".so" `isSuffixOf` libName
+  bindingLibFullNames <- filter isBindingLibName <$> getDirectoryContents pythonPackageName
+  when (length bindingLibFullNames /= 1) $
+    die' verbosity $
+      "Could not find unique Python extension library: " <> show bindingLibFullNames
+  let [bindingLibFullName] = bindingLibFullNames
+  installNameTool ["-change", "@rpath" </> foreignLibFullName, foreignLibDir </> foreignLibFullName, pythonPackageName </> bindingLibFullName]
+  pipx ["run", "--spec", "delocate", "delocate-path", pythonPackageName]
 
--- See: https://stackoverflow.com/a/6270337
-trim :: String -> String
-trim = f . f
-   where f = reverse . dropWhile isSpace
+toPythonPackageName :: HaskellLibraryName -> PythonPackageName
+toPythonPackageName foreignLibName = map toLower (fromMaybe foreignLibName (stripPrefix "HS" foreignLibName))
+
+findForeignLibNameAndBuildDir :: Verbosity -> PackageDescription -> LocalBuildInfo -> IO (HaskellLibraryName, FilePath)
+findForeignLibNameAndBuildDir verbosity packageDescription localBuildInfo = do
+  let PackageDescription {foreignLibs} = packageDescription
+  when (length foreignLibs /= 1) $
+    die' verbosity "Could not find unique foreign library"
+  let [ForeignLib {foreignLibName}] = foreignLibs
+  let LocalBuildInfo {componentNameMap} = localBuildInfo
+  let componentLocalBuildInfos = componentNameMap Map.! CFLibName foreignLibName
+  when (length componentLocalBuildInfos /= 1) $
+    die' verbosity "Could not find unique foreign libraries component"
+  let [componentLocalBuildInfo] = componentLocalBuildInfos
+  return (unUnqualComponentName foreignLibName, componentBuildDir localBuildInfo componentLocalBuildInfo)
