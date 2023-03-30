@@ -108,10 +108,11 @@ delocateShTemplate foreignLibDir =
 
 buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
   unlines
-    [ "import os",
-      "import shutil",
-      "from distutils.command.build_ext import build_ext",
+    [ "from distutils.command.build_ext import build_ext",
       "from distutils.core import Distribution, Extension",
+      "import os",
+      "import platform",
+      "import shutil",
       "",
       "ext_modules = [",
       "    Extension(",
