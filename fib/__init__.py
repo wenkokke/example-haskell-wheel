@@ -9,4 +9,4 @@ def fib(n: int) -> int:
 
 
 def main():
-    print(fib.fib(42))
+    print(fib(42))
