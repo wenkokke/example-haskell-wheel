@@ -55,6 +55,7 @@ main =
           writeFile "pyproject.toml" (pyprojectTomlTemplate packageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) license)
           writeFile "build.py" (buildPyTemplate packageName foreignLibName foreignLibDir)
           writeFile "paths.py" (pathsPyTemplate foreignLibDir)
+
           -- Build the wheel:
           pipx verbosity withPrograms ["run", "--spec", "build", "pyproject-build", "--wheel"]
           -- Check the wheel:
@@ -121,8 +122,14 @@ pyprojectTomlTemplate packageName version authorName authorEmail description lic
 pathsPyTemplate :: String -> String
 pathsPyTemplate foreignLibDir =
   unlines
-    [ "extra_library_dirs = ['" <> foreignLibDir <> "']"
+    [ "extra_library_dirs = ['" <> escape foreignLibDir <> "']"
     ]
+    where
+      escape :: String -> String
+      escape [] = []
+      escape ('\\' : cs) = '\\' : '\\' : escape cs
+      escape ('\'' : cs) = '\\' : '\'' : escape cs
+      escape (char : cs) = char        : escape cs
 
 buildPyTemplate :: String -> String -> String -> String
 buildPyTemplate packageName foreignLibName foreignLibDir =
