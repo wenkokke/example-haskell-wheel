@@ -73,12 +73,14 @@ pyprojectTomlTemplate pythonPackageName version authorName authorEmail descripti
       "version = '" <> version <> "'",
       "authors = ['" <> authorName <> " <" <> authorEmail <> ">']",
       "description = '" <> description <> "'",
+      "readme = 'README.md'",
       "license = '" <> license <> "'",
       "include = [",
       "  # Build script must be included in the sdist",
       "  { path = 'build.py', format = 'sdist' },",
       "  # C extensions must be included in the wheel",
       "  { path = '" <> pythonPackageName <> "/*.so', format = 'wheel' },",
+      "  { path = '" <> pythonPackageName <> "/*.dylib', format = 'wheel' },",
       "  { path = '" <> pythonPackageName <> "/*.pyd', format = 'wheel' },",
       "]",
       "",
@@ -89,7 +91,7 @@ pyprojectTomlTemplate pythonPackageName version authorName authorEmail descripti
 
 buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
   unlines
-    [ "import delocate.delocate_path",
+    [ "import delocate",
       "from distutils.command.build_ext import build_ext",
       "from distutils.core import Distribution, Extension",
       "import os",
@@ -129,7 +131,7 @@ buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
       "    # See: https://github.com/pypa/cibuildwheel/issues/816",
       "    if platform.system() == 'Darwin':",
       "        os.environ['DYLD_LIBRARY_PATH'] = '"<> foreignLibDir <>"'",
-      "        delocate.delocate_path('"<> pythonPackageName <>"', '"<> pythonPackageName <>"/.dylibs')",
+      "        delocate.delocate_path('"<> pythonPackageName <>"', '"<> pythonPackageName <>"')",
       "",
       "if __name__ == '__main__':",
       "    build()",
