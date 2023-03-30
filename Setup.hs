@@ -61,16 +61,12 @@ main =
           -- Build the extension:
           python ["build.py"]
 
-          -- Workaround for bug on macOS:
-          when (System.Info.os == "darwin") $
-            fixModuleRpathOnMacOS verbosity withPrograms pythonPackageName foreignLibName foreignLibDir
-
           -- Build the wheel:
           pipx ["run", "--spec", "build", "pyproject-build", "--wheel"]
 
           -- Delocate the wheel:
           when (System.Info.os == "darwin") $
-            pipx ["run", "--spec", "delocate", "delocate-wheel", "dist/*.whl"]
+            writeFile "delocate.sh" (delocateShTemplate foreignLibDir)
 
           -- Check the wheel:
           pipx ["run", "twine", "check", "dist/*.whl"]
@@ -101,11 +97,13 @@ pyprojectTomlTemplate pythonPackageName version authorName authorEmail descripti
       "generate-setup-file = false"
     ]
 
-setupPyTemplate =
+delocateShTemplate foreignLibDir =
   unlines
-    [ "import setuptools",
-      "import build",
-      "setuptools.setup(ext_modules=build.ext_modules)"
+    [
+      "#!/bin/bash",
+      "for whl in ./dist/*-macosx-*.whl; do",
+      "  DYLD_LIBRARY_PATH="<>foreignLibDir<>" python -m pipx run --spec delocate delocate-wheel ${whl}",
+      "done"
     ]
 
 buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
@@ -144,6 +142,11 @@ buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
       "        mode |= (mode & 0o444) >> 2",
       "        os.chmod(relative_extension, mode)",
       "",
+      "    # Workaround for issue with RPATH on macOS",
+      "    # See: https://github.com/pypa/cibuildwheel/issues/816",
+      "    if platform.system() == 'Darwin':",
+      "        os.environ['DYLD_LIBRARY_PATH'] = '"<> foreignLibDir <>"'",
+      "        delocate.delocate_path('"<> pythonPackageName <>"', '"<> pythonPackageName <>"/.dylibs')",
       "",
       "if __name__ == '__main__':",
       "    build()",
@@ -164,14 +167,7 @@ fixModuleRpathOnMacOS verbosity programDb pythonPackageName foreignLibName forei
   when (length bindingLibFullNames /= 1) $
     die' verbosity $
       "Could not find unique Python extension library: " <> show bindingLibFullNames
-  (configuredPythonProgram, programDb) <-
-    requireProgram verbosity pythonProgram programDb
-  let configuredPythonOverrideEnv = programOverrideEnv configuredPythonProgram
-  let configuredPythonProgramWithLibraryPathOverride =
-        configuredPythonProgram
-          { programOverrideEnv = configuredPythonOverrideEnv <> [("DYLD_LIBRARY_PATH", Just foreignLibDir)]
-          }
-  runProgram verbosity configuredPythonProgramWithLibraryPathOverride ["-m", "pipx", "run", "--spec", "delocate", "delocate-wheel", "dist/*.whl"]
+  pipx ["run", "--spec", "delocate", "delocate-wheel", "dist/*.whl"]
 
 findForeignLibNameAndBuildDir :: Verbosity -> PackageDescription -> LocalBuildInfo -> IO (HaskellLibraryName, FilePath)
 findForeignLibNameAndBuildDir verbosity packageDescription localBuildInfo = do
