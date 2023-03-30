@@ -55,18 +55,8 @@ main =
           let pipx = python . (["-m", "pipx"] <>)
           writeFile "build.py" (buildPyTemplate pythonPackageName foreignLibName foreignLibDir)
 
-          -- Create setup.py
-          -- writeFile "setup.py" setupPyTemplate
-
-          -- Build the extension:
-          python ["build.py"]
-
           -- Build the wheel:
           pipx ["run", "--spec", "build", "pyproject-build", "--wheel"]
-
-          -- Delocate the wheel:
-          when (System.Info.os == "darwin") $
-            writeFile "delocate.sh" (delocateShTemplate foreignLibDir)
 
           -- Check the wheel:
           pipx ["run", "twine", "check", "dist/*.whl"]
@@ -75,7 +65,7 @@ main =
 pyprojectTomlTemplate pythonPackageName version authorName authorEmail description license =
   unlines
     [ "[build-system]",
-      "requires = ['poetry-core>=1.5.0']",
+      "requires = ['delocate', 'poetry-core>=1.5.0']",
       "build-backend = 'poetry.core.masonry.api'",
       "",
       "[tool.poetry]",
@@ -97,18 +87,10 @@ pyprojectTomlTemplate pythonPackageName version authorName authorEmail descripti
       "generate-setup-file = false"
     ]
 
-delocateShTemplate foreignLibDir =
-  unlines
-    [
-      "#!/bin/bash",
-      "for whl in ./dist/*-macosx-*.whl; do",
-      "  DYLD_LIBRARY_PATH="<>foreignLibDir<>" python -m pipx run --spec delocate delocate-wheel ${whl}",
-      "done"
-    ]
-
 buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
   unlines
-    [ "from distutils.command.build_ext import build_ext",
+    [ "import delocate.delocate_path",
+      "from distutils.command.build_ext import build_ext",
       "from distutils.core import Distribution, Extension",
       "import os",
       "import platform",
