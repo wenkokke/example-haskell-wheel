@@ -39,6 +39,7 @@ main =
         -- Generates a Python package
         postBuild = \args buildFlags packageDescription localBuildInfo -> do
           let verbosity = fromFlagOrDefault normal (buildVerbosity buildFlags)
+
           -- Get package information
           let PackageDescription {package, author, maintainer, description, licenseRaw} = packageDescription
           let PackageIdentifier {pkgName, pkgVersion} = package
@@ -85,7 +86,7 @@ pyprojectTomlTemplate :: String -> String -> String -> String -> String -> Strin
 pyprojectTomlTemplate packageName version authorName authorEmail description license =
   unlines
     [ "[build-system]",
-      "requires = ['delocate', 'poetry-core>=1.5.0']",
+      "requires = ['poetry-core>=1.5.0', 'delocate; platform_system==\"Darwin\"']",
       "build-backend = 'poetry.core.masonry.api'",
       "",
       "[tool.poetry]",
