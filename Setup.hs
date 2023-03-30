@@ -116,8 +116,7 @@ pyprojectTomlTemplate packageName version authorName authorEmail description lic
 buildPyTemplate :: String -> String -> String -> String
 buildPyTemplate packageName foreignLibName foreignLibDir =
   unlines
-    [ "import delocate",
-      "from distutils.command.build_ext import build_ext",
+    [ "from distutils.command.build_ext import build_ext",
       "from distutils.core import Distribution, Extension",
       "import os",
       "import platform",
@@ -156,6 +155,7 @@ buildPyTemplate packageName foreignLibName foreignLibDir =
       "    # See: https://github.com/pypa/cibuildwheel/issues/816",
       "    if platform.system() == 'Darwin':",
       "        os.environ['DYLD_LIBRARY_PATH'] = '"<> foreignLibDir <>"'",
+      "        import delocate",
       "        delocate.delocate_path('"<> packageName <>"', '"<> packageName <>"')",
       "",
       "if __name__ == '__main__':",
