@@ -100,14 +100,14 @@ doesPipxExist verbosity programDb = do
   return $ output == "True"
 
 pyprojectTomlTemplate :: String -> String -> String -> String -> String -> String -> String
-pyprojectTomlTemplate packageName version authorName authorEmail description license =
+pyprojectTomlTemplate package version authorName authorEmail description license =
   unlines
     [ "[build-system]",
       "requires = ['poetry-core>=1.5.0', 'delocate; platform_system==\"Darwin\"']",
       "build-backend = 'poetry.core.masonry.api'",
       "",
       "[tool.poetry]",
-      "name = '" <> packageName <> "'",
+      "name = '" <> package <> "'",
       "version = '" <> version <> "'",
       "authors = ['" <> authorName <> " <" <> authorEmail <> ">']",
       "description = '" <> description <> "'",
@@ -118,9 +118,9 @@ pyprojectTomlTemplate packageName version authorName authorEmail description lic
       "  { path = 'build.py', format = 'sdist' },",
       "  { path = 'paths.py', format = 'sdist' },",
       "  # C extensions must be included in the wheel",
-      "  { path = '" <> packageName <> "/*.so', format = 'wheel' },",
-      "  { path = '" <> packageName <> "/*.dylib', format = 'wheel' },",
-      "  { path = '" <> packageName <> "/*.pyd', format = 'wheel' },",
+      "  { path = '" <> package <> "/*.so', format = 'wheel' },",
+      "  { path = '" <> package <> "/*.dylib', format = 'wheel' },",
+      "  { path = '" <> package <> "/*.pyd', format = 'wheel' },",
       "]",
       "",
       "[tool.poetry.build]",
