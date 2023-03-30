@@ -6,3 +6,7 @@ def fib(n: int) -> int:
     r = hs_fib(n)
     hs_rts_exit()
     return r
+
+
+def main():
+    print(fib.fib(42))

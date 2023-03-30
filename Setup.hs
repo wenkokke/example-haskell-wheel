@@ -86,7 +86,10 @@ pyprojectTomlTemplate pythonPackageName version authorName authorEmail descripti
       "",
       "[tool.poetry.build]",
       "script = 'build.py'",
-      "generate-setup-file = false"
+      "generate-setup-file = false",
+      "",
+      "[tool.poetry.scripts]",
+      "fib = 'fib:main'"
     ]
 
 buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
