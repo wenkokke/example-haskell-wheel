@@ -31,5 +31,5 @@ cabal.project.local~
 /fib/binding_wrap.c
 /build/
 /build.py
-/setup.py
+/paths.py
 /pyproject.toml

@@ -51,10 +51,10 @@ main =
           (foreignLibName, foreignLibDir) <- findForeignLibInfo verbosity packageDescription localBuildInfo
           let LocalBuildInfo {withPrograms} = localBuildInfo
 
-          -- Create pyproject.toml
+          -- Create pyproject.toml, build.py, and paths.py:
           writeFile "pyproject.toml" (pyprojectTomlTemplate packageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) license)
-          -- Create build.py
           writeFile "build.py" (buildPyTemplate packageName foreignLibName foreignLibDir)
+          writeFile "paths.py" (pathsPyTemplate foreignLibDir)
           -- Build the wheel:
           pipx verbosity withPrograms ["run", "--spec", "build", "pyproject-build", "--wheel"]
           -- Check the wheel:
@@ -99,6 +99,7 @@ pyprojectTomlTemplate packageName version authorName authorEmail description lic
       "include = [",
       "  # Build script must be included in the sdist",
       "  { path = 'build.py', format = 'sdist' },",
+      "  { path = 'paths.py', format = 'sdist' },",
       "  # C extensions must be included in the wheel",
       "  { path = '" <> packageName <> "/*.so', format = 'wheel' },",
       "  { path = '" <> packageName <> "/*.dylib', format = 'wheel' },",
@@ -107,11 +108,16 @@ pyprojectTomlTemplate packageName version authorName authorEmail description lic
       "",
       "[tool.poetry.build]",
       "script = 'build.py'",
-      "generate-setup-file = false",
-      "",
-      "[tool.poetry.scripts]",
-      "fib = 'fib:main'"
+      "generate-setup-file = false"
     ]
+
+pathsPyTemplate :: String -> String
+pathsPyTemplate foreignLibDir =
+  unlines
+    [
+      "extra_library_dirs = ['"<> foreignLibDir <>"']"
+    ]
+
 
 buildPyTemplate :: String -> String -> String -> String
 buildPyTemplate packageName foreignLibName foreignLibDir =
@@ -120,13 +126,14 @@ buildPyTemplate packageName foreignLibName foreignLibDir =
       "from distutils.core import Distribution, Extension",
       "import os",
       "import platform",
+      "import paths",
       "import shutil",
       "",
       "ext_modules = [",
       "    Extension(",
       "        name='" <> packageName <> "._binding',",
       "        libraries=['" <> foreignLibName <> "'],",
-      "        library_dirs=['" <> foreignLibDir <> "'],",
+      "        library_dirs=paths.extra_library_dirs,",
       "        sources=['./" <> packageName <> "/binding.i'],",
       "    )",
       "]",
@@ -154,7 +161,7 @@ buildPyTemplate packageName foreignLibName foreignLibDir =
       "    # Workaround for issue with RPATH on macOS",
       "    # See: https://github.com/pypa/cibuildwheel/issues/816",
       "    if platform.system() == 'Darwin':",
-      "        os.environ['DYLD_LIBRARY_PATH'] = '"<> foreignLibDir <>"'",
+      "        os.environ['DYLD_LIBRARY_PATH'] = os.pathsep.join(paths.extra_library_dirs)",
       "        import delocate",
       "        delocate.delocate_path('"<> packageName <>"', '"<> packageName <>"')",
       "",
