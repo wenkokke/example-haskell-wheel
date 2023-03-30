@@ -30,8 +30,6 @@ foreign-library HSfib
   type:             native-shared
   options:          standalone
   c-sources:        cbits/HSfib.c
-  if os(Windows)
-    mod-def-file:   cbits/HSfib.def
   hs-source-dirs:   src
   other-modules:    Fib
   build-depends:    base >=4.7 && <5

@@ -1,4 +1,0 @@
-EXPORTS
-  hs_fib
-  hs_rts_init
-  hs_rts_exit
