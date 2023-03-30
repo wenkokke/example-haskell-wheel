@@ -20,6 +20,7 @@ custom-setup
     , containers
     , directory
     , filepath
+    , pretty
 
 common warnings
   ghc-options: -Wall

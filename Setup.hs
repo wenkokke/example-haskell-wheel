@@ -7,9 +7,10 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
 import Distribution.PackageDescription (ComponentName (..), ForeignLib (..), PackageDescription (..), showComponentName, unUnqualComponentName)
+import Distribution.Pretty (Pretty (..))
 import Distribution.Simple (PackageIdentifier (..), UserHooks (..), defaultMainWithHooks, simpleUserHooks, versionNumbers)
 import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo, LocalBuildInfo (..), componentBuildDir)
-import Distribution.Simple.Program (Program, ProgramDb, runDbProgram, simpleProgram)
+import Distribution.Simple.Program (ConfiguredProgram (..), Program, ProgramDb, requireProgram, runDbProgram, runProgram, simpleProgram)
 import Distribution.Simple.Setup (BuildFlags (..), fromFlagOrDefault)
 import Distribution.Simple.Utils (die', findFirstFile)
 import Distribution.Utils.Path (getSymbolicPath)
@@ -18,6 +19,7 @@ import Distribution.Verbosity (Verbosity, normal)
 import System.Directory (getDirectoryContents)
 import System.FilePath ((<.>), (</>))
 import System.Info (os)
+import Text.PrettyPrint (render)
 
 type PythonPackageName = FilePath
 
@@ -41,13 +43,11 @@ main =
           let pythonPackageName = toPythonPackageName foreignLibName
 
           -- Create pyproject.toml
-          let PackageDescription {package, author, maintainer, description, licenseFiles} = packageDescription
-          when (length licenseFiles /= 1) $
-            die' verbosity "Could not find unique license file"
+          let PackageDescription {package, author, maintainer, description, licenseRaw} = packageDescription
           let PackageIdentifier {pkgVersion} = package
+          let license = either (render . pretty) (render . pretty) licenseRaw
           let version = intercalate "." (map show (versionNumbers pkgVersion))
-          let [licenseFile] = map getSymbolicPath licenseFiles
-          writeFile "pyproject.toml" (pyprojectTomlTemplate pythonPackageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) licenseFile)
+          writeFile "pyproject.toml" (pyprojectTomlTemplate pythonPackageName version (fromShortText author) (fromShortText maintainer) (fromShortText description) license)
 
           -- Create build.py
           let LocalBuildInfo {withPrograms} = localBuildInfo
@@ -56,37 +56,54 @@ main =
           writeFile "build.py" (buildPyTemplate pythonPackageName foreignLibName foreignLibDir)
 
           -- Create setup.py
-          writeFile "setup.py" setupPyTemplate
+          -- writeFile "setup.py" setupPyTemplate
 
-          -- Build the wheel:
-          -- pipx ["run", "--spec", "build", "pyproject-build", "--wheel"]
+          -- Build the extension:
+          python ["build.py"]
 
           -- Workaround for bug on macOS:
-          -- when (System.Info.os == "darwin") $
-          --   fixModuleRpathOnMacOS verbosity withPrograms pythonPackageName foreignLibName foreignLibDir
+          when (System.Info.os == "darwin") $
+            fixModuleRpathOnMacOS verbosity withPrograms pythonPackageName foreignLibName foreignLibDir
+
+          -- Build the wheel:
+          pipx ["run", "--spec", "build", "pyproject-build", "--wheel"]
+
+          -- Delocate the wheel:
+          when (System.Info.os == "darwin") $
+            pipx ["run", "--spec", "delocate", "delocate-wheel", "dist/*.whl"]
 
           -- Check the wheel:
-          -- pipx ["run", "twine", "check", "dist/*.whl"]
+          pipx ["run", "twine", "check", "dist/*.whl"]
       }
 
-pyprojectTomlTemplate pythonPackageName version authorName authorEmail description licenseFile =
+pyprojectTomlTemplate pythonPackageName version authorName authorEmail description license =
   unlines
-    [ "[project]",
+    [ "[build-system]",
+      "requires = ['poetry-core>=1.5.0']",
+      "build-backend = 'poetry.core.masonry.api'",
+      "",
+      "[tool.poetry]",
       "name = '" <> pythonPackageName <> "'",
       "version = '" <> version <> "'",
-      "authors = [{ name = '" <> authorName <> "', email = '" <> authorEmail <> "' }]",
+      "authors = ['" <> authorName <> " <" <> authorEmail <> ">']",
       "description = '" <> description <> "'",
-      "license = { file = '" <> licenseFile <> "' }",
+      "license = '" <> license <> "'",
+      "include = [",
+      "  # Build script must be included in the sdist",
+      "  { path = 'build.py', format = 'sdist' },",
+      "  # C extensions must be included in the wheel",
+      "  { path = '" <> pythonPackageName <> "/*.so', format = 'wheel' },",
+      "  { path = '" <> pythonPackageName <> "/*.pyd', format = 'wheel' },",
+      "]",
       "",
-      "[build-system]",
-      "requires = ['setuptools']",
-      "build-backend = 'setuptools.build_meta'"
+      "[tool.poetry.build]",
+      "script = 'build.py'",
+      "generate-setup-file = false"
     ]
 
 setupPyTemplate =
   unlines
-    [
-      "import setuptools",
+    [ "import setuptools",
       "import build",
       "setuptools.setup(ext_modules=build.ext_modules)"
     ]
@@ -133,6 +150,9 @@ buildPyTemplate pythonPackageName foreignLibName foreignLibDir =
       ""
     ]
 
+toPythonPackageName :: HaskellLibraryName -> PythonPackageName
+toPythonPackageName foreignLibName = map toLower (fromMaybe foreignLibName (stripPrefix "HS" foreignLibName))
+
 fixModuleRpathOnMacOS :: Verbosity -> ProgramDb -> PythonPackageName -> HaskellLibraryName -> FilePath -> IO ()
 fixModuleRpathOnMacOS verbosity programDb pythonPackageName foreignLibName foreignLibDir = do
   let installNameTool = runDbProgram verbosity installNameToolProgram programDb
@@ -144,12 +164,14 @@ fixModuleRpathOnMacOS verbosity programDb pythonPackageName foreignLibName forei
   when (length bindingLibFullNames /= 1) $
     die' verbosity $
       "Could not find unique Python extension library: " <> show bindingLibFullNames
-  let [bindingLibFullName] = bindingLibFullNames
-  installNameTool ["-change", "@rpath" </> foreignLibFullName, foreignLibDir </> foreignLibFullName, pythonPackageName </> bindingLibFullName]
-  pipx ["run", "--spec", "delocate", "delocate-path", pythonPackageName]
-
-toPythonPackageName :: HaskellLibraryName -> PythonPackageName
-toPythonPackageName foreignLibName = map toLower (fromMaybe foreignLibName (stripPrefix "HS" foreignLibName))
+  (configuredPythonProgram, programDb) <-
+    requireProgram verbosity pythonProgram programDb
+  let configuredPythonOverrideEnv = programOverrideEnv configuredPythonProgram
+  let configuredPythonProgramWithLibraryPathOverride =
+        configuredPythonProgram
+          { programOverrideEnv = configuredPythonOverrideEnv <> [("DYLD_LIBRARY_PATH", Just foreignLibDir)]
+          }
+  runProgram verbosity configuredPythonProgramWithLibraryPathOverride ["-m", "pipx", "run", "--spec", "delocate", "delocate-wheel", "dist/*.whl"]
 
 findForeignLibNameAndBuildDir :: Verbosity -> PackageDescription -> LocalBuildInfo -> IO (HaskellLibraryName, FilePath)
 findForeignLibNameAndBuildDir verbosity packageDescription localBuildInfo = do
