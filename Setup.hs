@@ -1,16 +1,16 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
-import Control.Monad (when, unless)
+import Control.Monad (unless, when)
 import Data.Char (toLower)
 import Data.List (intercalate, intersperse, isPrefixOf, isSuffixOf, stripPrefix)
 import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Maybe (fromMaybe)
-import Distribution.PackageDescription (ComponentName (..), ForeignLib (..), PackageDescription (..), showComponentName, unUnqualComponentName, unPackageName)
+import Distribution.PackageDescription (ComponentName (..), ForeignLib (..), PackageDescription (..), showComponentName, unPackageName, unUnqualComponentName)
 import Distribution.Pretty (Pretty (..))
 import Distribution.Simple (PackageIdentifier (..), UserHooks (..), defaultMainWithHooks, simpleUserHooks, versionNumbers)
 import Distribution.Simple.LocalBuildInfo (ComponentLocalBuildInfo, LocalBuildInfo (..), componentBuildDir)
-import Distribution.Simple.Program (ConfiguredProgram (..), Program, ProgramDb, requireProgram, runDbProgram, runProgram, simpleProgram, getDbProgramOutput, needProgram)
+import Distribution.Simple.Program (ConfiguredProgram (..), Program, ProgramDb, getDbProgramOutput, needProgram, requireProgram, runDbProgram, runProgram, simpleProgram)
 import Distribution.Simple.Setup (BuildFlags (..), fromFlagOrDefault)
 import Distribution.Simple.Utils (die', findFirstFile)
 import Distribution.Utils.Path (getSymbolicPath)
@@ -70,16 +70,23 @@ pipx verbosity programDb args = do
   case maybePipxProgram of
     Nothing -> do
       pipxExists <- doesPipxExist verbosity programDb
-      unless pipxExists . die' verbosity $
-        "The program 'pipx' is required but it could not be found."
+      unless pipxExists . die' verbosity . unlines $
+        [ "",
+          "The program 'pipx' is required but it could not be found.",
+          "See: https://pypa.github.io/pipx/#install-pipx"
+        ]
       runDbProgram verbosity pythonProgram programDb ("-m" : "pipx" : args)
     Just (pipxProgram, programDb) -> do
       runProgram verbosity pipxProgram args
 
 doesPipxExist :: Verbosity -> ProgramDb -> IO Bool
 doesPipxExist verbosity programDb = do
-  output <- getDbProgramOutput verbosity pythonProgram programDb
-    ["-c", "import importlib.util; print(importlib.util.find_spec('pipx') is not None)"]
+  output <-
+    getDbProgramOutput
+      verbosity
+      pythonProgram
+      programDb
+      ["-c", "import importlib.util; print(importlib.util.find_spec('pipx') is not None)"]
   return $ output == "True"
 
 pyprojectTomlTemplate :: String -> String -> String -> String -> String -> String -> String
@@ -114,10 +121,8 @@ pyprojectTomlTemplate packageName version authorName authorEmail description lic
 pathsPyTemplate :: String -> String
 pathsPyTemplate foreignLibDir =
   unlines
-    [
-      "extra_library_dirs = ['"<> foreignLibDir <>"']"
+    [ "extra_library_dirs = ['" <> foreignLibDir <> "']"
     ]
-
 
 buildPyTemplate :: String -> String -> String -> String
 buildPyTemplate packageName foreignLibName foreignLibDir =
@@ -128,6 +133,8 @@ buildPyTemplate packageName foreignLibName foreignLibDir =
       "import platform",
       "import paths",
       "import shutil",
+      "",
+      "print(os.listdir(next(paths.extra_library_dirs)))",
       "",
       "ext_modules = [",
       "    Extension(",
@@ -163,7 +170,7 @@ buildPyTemplate packageName foreignLibName foreignLibDir =
       "    if platform.system() == 'Darwin':",
       "        os.environ['DYLD_LIBRARY_PATH'] = os.pathsep.join(paths.extra_library_dirs)",
       "        import delocate",
-      "        delocate.delocate_path('"<> packageName <>"', '"<> packageName <>"')",
+      "        delocate.delocate_path('" <> packageName <> "', '" <> packageName <> "')",
       "",
       "if __name__ == '__main__':",
       "    build()",
