@@ -35,6 +35,15 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python.version }}
+          cache: "pip"
+          cache-dependency-path: "requirements-ci.txt"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements-ci.txt
+        shell: sh
 
       - name: Build & Test
         run: tox run -e ${{ matrix.python.env }}
+        shell: sh
