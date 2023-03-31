@@ -87,9 +87,13 @@ class build_hs_ext(build_ext):
             "win32": "dll",
             "cygwin": "dll",
         }.get(sys.platform, None)
+        library_prefix = {
+            "darwin": "lib",
+            "linux": "lib",
+        }.get(sys.platform, "")
         if not dynlib_extension:
             raise PlatformError(f"unsupported platform {self.plat_name}")
-        return f"lib{self.cabal_component_name(ext)}{os.path.extsep}{dynlib_extension}"
+        return f"{library_prefix}{self.cabal_component_name(ext)}{os.path.extsep}{dynlib_extension}"
 
     def cabal_component_name(self, ext):
         return ext.name.split(".")[-1]
