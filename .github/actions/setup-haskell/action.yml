@@ -26,8 +26,13 @@ runs:
       if: runner.os == 'Linux' && inputs.ghc-bootstrap-version == ''
       run: echo "GHC bootstrap version not provided on Linux" && exit 1
       shell: sh
+    
+    - name: Install dependencies for GHC ${{ inputs.ghc-bootstrap-version }}
+      if: runner.os == 'Linux'
+      run: sudo apt-get update && apt-get install -y libnuma-dev
+      shell: sh
 
-    - name: Setup Bootstrap GHC ${{ inputs.ghc-bootstrap-version }}
+    - name: Setup GHC ${{ inputs.ghc-bootstrap-version }}
       if: runner.os == 'Linux'
       id: setup-bootstrap-ghc
       uses: haskell/actions/setup@v2
