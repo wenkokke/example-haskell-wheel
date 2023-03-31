@@ -32,15 +32,12 @@ class build_hs_ext(build_ext):
 
         # Print info:
         print(f"Outputs: {self.get_outputs()}")
-        print(f"Libraries: {self.libraries}")
-        print(f"Define: {self.define}")
-        print(f"Undef: {self.undef}")
-        print(f"Rpath: {self.rpath}")
-        print(f"Link objects: {self.link_objects}")
+        for library_dir in self.library_dirs:
+          print(os.listdir(library_dir))
 
         # Next, run build the sources with Cabal.
         self.mkpath(self.build_temp)
-        self.cabal_configure(ext)
+        self.cabal_configure(et)
         self.cabal_build(ext)
         self.cabal_copy(ext)
 
