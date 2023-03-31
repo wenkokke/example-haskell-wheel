@@ -27,9 +27,12 @@ runs:
       run: echo "GHC bootstrap version not provided on Linux" && exit 1
       shell: sh
     
-    - name: Install dependencies for GHC ${{ inputs.ghc-bootstrap-version }}
+    - # 31-03-2023:
+      # Workaround for an issue with GHC 9.0.2, which depends on libnuma,
+      # which isn't mentioned by GHCup nor installed by haskell/actions/setup
+      name: Install libnuma-dev
       if: runner.os == 'Linux'
-      run: sudo apt-get update && apt-get install -y libnuma-dev
+      run: sudo apt-get update && sudo apt-get install -y libnuma-dev
       shell: sh
 
     - name: Setup GHC ${{ inputs.ghc-bootstrap-version }}
