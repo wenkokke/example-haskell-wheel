@@ -14,22 +14,27 @@ ext_modules = [
 
 
 class build_hs_ext(build_ext):
-    _runhaskell: Optional[str] = None
+    def build_extension(self, ext):
+        sources = ext.sources
+        if sources is None or not isinstance(sources, (list, tuple)):
+            raise DistutilsSetupError(
+                "in 'ext_modules' option (extension '%s'), "
+                "'sources' must be present and must be "
+                "a list of source filenames" % ext.name
+            )
+        # sort to make the resulting .so file build reproducible
+        sources = sorted(sources)
 
-    def find_runhaskell(self):
-        if self._runhaskell is None:
-            self._runhaskell = find_executable("runhaskell")
-            if self._runhaskell is None:
-                raise ExecError("could not find executable 'runhaskell'")
-        return self._runhaskell
+        # First, scan the sources for SWIG definition files (.i), run
+        # SWIG on 'em to create .c files, and modify the sources list
+        # accordingly.
+        sources = self.swig_sources(sources, ext)
 
-    def cabal(self, args):
-        args = [self.find_runhaskell(), "Setup.hs", *args]
-        cmd = " ".join(args)
-        print(cmd)
-        exitCode = subprocess.call(args)
-        if exitCode != 0:
-            raise ExecError(f"error occurred when running '{cmd}'")
+        # Next, run build the sources with Cabal.
+        self.mkpath(self.build_temp)
+        self.cabal_configure(ext)
+        self.cabal_build(ext)
+        self.cabal_copy(ext)
 
     def cabal_configure(self, ext):
         args = ["configure"]
@@ -54,7 +59,7 @@ class build_hs_ext(build_ext):
         self.cabal(args)
 
     def cabal_copy(self, ext):
-        args = [self.find_runhaskell(), "Setup.hs", "copy"]
+        args = ["copy"]
         args.append(f"--builddir={self.build_temp}")
         args.append(f"--destdir={self.build_temp}")
         self.cabal(args)
@@ -63,27 +68,13 @@ class build_hs_ext(build_ext):
         self.mkpath(os.path.dirname(ext_target))
         self.copy_file(ext_source, ext_target)
 
-    def build_extension(self, ext):
-        sources = ext.sources
-        if sources is None or not isinstance(sources, (list, tuple)):
-            raise DistutilsSetupError(
-                "in 'ext_modules' option (extension '%s'), "
-                "'sources' must be present and must be "
-                "a list of source filenames" % ext.name
-            )
-        # sort to make the resulting .so file build reproducible
-        sources = sorted(sources)
-
-        # First, scan the sources for SWIG definition files (.i), run
-        # SWIG on 'em to create .c files, and modify the sources list
-        # accordingly.
-        sources = self.swig_sources(sources, ext)
-
-        # Next, run build the sources with Cabal.
-        self.mkpath(self.build_temp)
-        self.cabal_configure(ext)
-        self.cabal_build(ext)
-        self.cabal_copy(ext)
+    def cabal(self, args):
+        args = [self.find_runhaskell(), "Setup.hs", *args]
+        cmd = " ".join(args)
+        print(cmd)
+        exitCode = subprocess.call(args)
+        if exitCode != 0:
+            raise ExecError(f"error occurred when running '{cmd}'")
 
     def cabal_component_library_path(self, ext):
         return os.path.join(self.build_temp, self.cabal_component_library_name(ext))
@@ -101,6 +92,15 @@ class build_hs_ext(build_ext):
 
     def cabal_component_name(self, ext):
         return ext.name.split(".")[-1]
+
+    _runhaskell: Optional[str] = None
+
+    def find_runhaskell(self):
+        if self._runhaskell is None:
+            self._runhaskell = find_executable("runhaskell")
+            if self._runhaskell is None:
+                raise ExecError("could not find executable 'runhaskell'")
+        return self._runhaskell
 
 
 setup(ext_modules=ext_modules, cmdclass={"build_ext": build_hs_ext})
