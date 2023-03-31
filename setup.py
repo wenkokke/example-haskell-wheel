@@ -30,6 +30,12 @@ class build_hs_ext(build_ext):
         # accordingly.
         sources = self.swig_sources(sources, ext)
 
+        # Print info:
+        for library in self.libraries:
+            print(f"Library: {library}")
+        for output in self.get_outputs():
+            print(f"Output: {output}")
+
         # Next, run build the sources with Cabal.
         self.mkpath(self.build_temp)
         self.cabal_configure(ext)
@@ -41,6 +47,7 @@ class build_hs_ext(build_ext):
         args.extend(f"--extra-lib-dirs={dir}" for dir in self.library_dirs)
         args.extend(f"--extra-include-dirs={dir}" for dir in self.include_dirs)
         args.append(f"--extra-prog-path={os.path.dirname(sys.executable)}")
+        args.extend(f"--ghc-options=-optl-l{library}" for library in self.libraries)
         args.extend(
             [
                 f"--prefix={os.path.abspath(self.build_temp)}",
