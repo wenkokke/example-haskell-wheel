@@ -29,5 +29,5 @@ foreign-library _binding
   default-language:  Haskell2010
   
   if os(windows)
-    mod-def-file:    Fib.def
+    mod-def-file:    src/fib/binding.def
     extra-libraries: python311.lib
