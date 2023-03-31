@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = 'fib'
+version = '0.1.0'
+authors = [{ name = 'Wen Kokke', email = 'wenkokke@users.noreply.github.com' }]
+description = 'An experiment in publishing a Haskell library as a Python Wheel.'
+readme = 'README.md'
+license = { file = 'LICENSE' }
+
+[tool.setuptools.packages.find]
+where = ["src/py"]

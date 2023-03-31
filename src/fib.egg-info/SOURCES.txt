@@ -1,9 +1,0 @@
-LICENSE
-README.md
-pyproject.toml
-setup.py
-./fib/binding.i
-src/fib.egg-info/PKG-INFO
-src/fib.egg-info/SOURCES.txt
-src/fib.egg-info/dependency_links.txt
-src/fib.egg-info/top_level.txt

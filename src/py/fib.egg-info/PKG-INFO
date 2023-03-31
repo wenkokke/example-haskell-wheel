@@ -25,4 +25,8 @@ License: MIT License
         OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
         SOFTWARE.
         
+Description-Content-Type: text/markdown
 License-File: LICENSE
+
+# haskell-wheel
+An experiment in publishing a Haskell library as a Python wheel.
