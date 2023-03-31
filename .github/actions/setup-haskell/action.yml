@@ -7,7 +7,7 @@ inputs:
     default: "latest"
   ghc-bootstrap-version:
     required: false
-    description: 'Version of GHC to use to bootstrap GHC.'
+    description: "Version of GHC to use to bootstrap GHC."
   cabal-version:
     required: false
     description: 'Version of Cabal to use. If set to "latest", it will always get the latest stable version.'
@@ -27,7 +27,7 @@ runs:
       run: echo "GHC bootstrap version not provided on Linux" && exit 1
       shell: sh
 
-    - name: Setup GHC ${{ inputs.ghc-bootstrap-version }}
+    - name: Setup Bootstrap GHC ${{ inputs.ghc-bootstrap-version }}
       if: runner.os == 'Linux'
       id: setup-bootstrap-ghc
       uses: haskell/actions/setup@v2
@@ -46,14 +46,6 @@ runs:
           -p ${PWD}/patches \
           -c ${PWD}/build.mk \
           -o ${{ inputs.ghc-version }}-fPIC \
-          -- --with-system-libffi \
-          2> $GITHUB_WORKSPACE/compile-${{ inputs.ghc-version }}-with-${{ inputs.ghc-bootstrap-version }}.log
-      shell: bash
+          -- --with-system-libffi
+      shell: sh
       working-directory: vendor/ghc
-
-    - name: Upload GHCup logs
-      if: failure() && runner.os == 'Linux' && steps.setup-ghc.outcome != 'success'
-      uses: actions/upload-artifact@v3
-      with:
-        name: ghcup-logs
-        path: $GITHUB_WORKSPACE/compile-${{ inputs.ghc-version }}-with-${{ inputs.ghc-bootstrap-version }}.log

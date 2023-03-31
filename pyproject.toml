@@ -23,8 +23,6 @@ skip_missing_interpreters = true
 [testenv]
 extras =
   test
-commands_pre =
-  {envpython} setup.py build_ext
 commands =
   {envpython} -m pytest tests
 """
