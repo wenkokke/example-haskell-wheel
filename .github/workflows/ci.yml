@@ -38,7 +38,7 @@ jobs:
 
       - name: Build & Test
         run: |
-          pip install pipx
+          python setup.py build_ext
           cabal build
           pip install ./dist/*.whl
           python -m fib

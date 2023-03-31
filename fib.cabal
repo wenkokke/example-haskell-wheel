@@ -29,7 +29,7 @@ foreign-library _binding
   import:           warnings
   type:             native-shared
   options:          standalone
-  c-sources:        src/py/fib/binding_wrap.c
+  c-sources:        src/fib/binding_wrap.c
   hs-source-dirs:   src/hs
   other-modules:    Fib
   build-depends:    base >=4.7 && <5

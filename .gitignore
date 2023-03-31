@@ -26,7 +26,6 @@ cabal.project.local~
 *.dylib
 
 # Generated files
-/fib/binding.py
-/fib/_binding.so
-/fib/binding_wrap.c
-/build/
+src/fib/binding.py
+src/fib/_binding.*.so
+src/fib/binding_wrap.c
