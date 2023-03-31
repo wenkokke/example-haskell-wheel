@@ -1,26 +1,19 @@
-cabal-version:      3.0
-name:               fib
-version:            0.1.0
+cabal-version:   3.0
+name:            fib
+version:         0.1.0
 description:
   An experiment in publishing a Haskell library as a Python Wheel.
 
-license:            MIT
-license-file:       LICENSE
-author:             Wen Kokke
-maintainer:         wenkokke@users.noreply.github.com
-copyright:          (c) 2023 Wen Kokke
-build-type:         Custom
-extra-doc-files:    CHANGELOG.md
-extra-source-files:
+license:         MIT
+license-file:    LICENSE
+author:          Wen Kokke
+maintainer:      wenkokke@users.noreply.github.com
+copyright:       (c) 2023 Wen Kokke
+build-type:      Custom
+extra-doc-files: CHANGELOG.md
 
 custom-setup
-  setup-depends:
-    , base
-    , Cabal
-    , containers
-    , directory
-    , filepath
-    , pretty
+  setup-depends: Cabal
 
 common warnings
   ghc-options: -Wall

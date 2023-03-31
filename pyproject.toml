@@ -9,3 +9,22 @@ authors = [{ name = 'Wen Kokke', email = 'wenkokke@users.noreply.github.com' }]
 description = 'An experiment in publishing a Haskell library as a Python Wheel.'
 readme = 'README.md'
 license = { file = 'LICENSE' }
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[tool.tox]
+legacy_tox_ini = """
+[tox]
+envlist = py37, py38, py39, py310, py311
+isolated_build = true
+skip_missing_interpreters = true
+
+[testenv]
+extras =
+  test
+commands_pre =
+  {envpython} setup.py build_ext --inplace
+commands =
+  {envpython} -m pytest tests
+"""

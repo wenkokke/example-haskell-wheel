@@ -14,59 +14,51 @@ ext_modules = [
 
 
 class build_hs_ext(build_ext):
-    cabal: Optional[str] = None
-    runhaskell: Optional[str] = None
+    _runhaskell: Optional[str] = None
 
     def find_runhaskell(self):
-        if self.runhaskell is None:
-            self.runhaskell = find_executable("runhaskell")
-            if self.runhaskell is None:
+        if self._runhaskell is None:
+            self._runhaskell = find_executable("runhaskell")
+            if self._runhaskell is None:
                 raise ExecError("could not find executable 'runhaskell'")
-        return self.runhaskell
+        return self._runhaskell
 
-    def find_cabal(self):
-        if self.cabal is None:
-            self.cabal = find_executable("cabal")
-            if self.cabal is None:
-                raise ExecError("could not find executable 'cabal'")
-        return self.cabal
+    def cabal(self, args):
+        args = [self.find_runhaskell(), "Setup.hs", *args]
+        cmd = " ".join(args)
+        print(cmd)
+        exitCode = subprocess.call(args)
+        if exitCode != 0:
+            raise ExecError(f"error occurred when running '{cmd}'")
 
-    def cabal_configure(self, ext: Extension):
-        args = [self.find_runhaskell(), "Setup.hs", "configure"]
-        args.append(self._cabal_component_name(ext))
+    def cabal_configure(self, ext):
+        args = ["configure"]
+        args.extend(f"--extra-lib-dirs={dir}" for dir in self.library_dirs)
+        args.extend(f"--extra-include-dirs={dir}" for dir in self.include_dirs)
+        args.append(f"--extra-prog-path={os.path.dirname(sys.executable)}")
         args.extend(
-            f"--extra-lib-dirs={os.path.abspath(dir)}" for dir in self.library_dirs
+            [
+                f"--prefix={os.path.abspath(self.build_temp)}",
+                f"--libdir=",
+                f"--dynlibdir=",
+                f"--datadir=",
+                f"--docdir=",
+                f"--builddir={os.path.abspath(self.build_temp)}",
+            ]
         )
-        args.extend(
-            f"--extra-include-dirs={os.path.abspath(dir)}" for dir in self.include_dirs
-        )
-        args.append(
-            f"--extra-prog-path={os.path.dirname(os.path.abspath(sys.executable))}"
-        )
-        args.append(f"--prefix={os.path.abspath(self.build_temp)}")
-        args.append(f"--libdir=")
-        args.append(f"--dynlibdir=")
-        args.append(f"--datadir=")
-        args.append(f"--docdir=")
-        args.append(f"--builddir={os.path.abspath(self.build_temp)}")
-        print(" ".join(args))
-        subprocess.call(args)
+        self.cabal(args)
 
-    def cabal_build(self, ext: Extension):
-        args = [self.find_runhaskell(), "Setup.hs", "build"]
-        args.append(self._cabal_component_name(ext))
+    def cabal_build(self, ext):
+        args = ["build"]
         args.append(f"--builddir={self.build_temp}")
-        print(" ".join(args))
-        subprocess.call(args)
+        self.cabal(args)
 
-    def cabal_copy(self, ext: Extension):
+    def cabal_copy(self, ext):
         args = [self.find_runhaskell(), "Setup.hs", "copy"]
-        args.append(self._cabal_component_name(ext))
         args.append(f"--builddir={self.build_temp}")
         args.append(f"--destdir={self.build_temp}")
-        print(" ".join(args))
-        subprocess.call(args)
-        ext_source = self._cabal_component_library_path(ext)
+        self.cabal(args)
+        ext_source = self.cabal_component_library_path(ext)
         ext_target = self.get_ext_fullpath(ext.name)
         self.mkpath(os.path.dirname(ext_target))
         self.copy_file(ext_source, ext_target)
@@ -88,36 +80,27 @@ class build_hs_ext(build_ext):
         sources = self.swig_sources(sources, ext)
 
         # Next, run build the sources with Cabal.
+        self.mkpath(self.build_temp)
         self.cabal_configure(ext)
         self.cabal_build(ext)
         self.cabal_copy(ext)
 
-    def _cabal_component_name(self, ext: Extension):
+    def cabal_component_library_path(self, ext):
+        return os.path.join(self.build_temp, self.cabal_component_library_name(ext))
+
+    def cabal_component_library_name(self, ext):
+        dynlib_extension = {
+            "darwin": "dylib",
+            "linux": "so",
+            "win32": "dll",
+            "cygwin": "dll",
+        }.get(sys.platform, None)
+        if not dynlib_extension:
+            raise PlatformError(f"unsupported platform {self.plat_name}")
+        return f"lib{self.cabal_component_name(ext)}{os.path.extsep}{dynlib_extension}"
+
+    def cabal_component_name(self, ext):
         return ext.name.split(".")[-1]
-
-    def _cabal_component_library_name(self, ext: Extension):
-        return (
-            "lib"
-            + self._cabal_component_name(ext)
-            + os.path.extsep
-            + self._dynlib_extension()
-        )
-
-    def _cabal_component_library_path(self, ext: Extension):
-        return os.path.join(self.build_temp, self._cabal_component_library_name(ext))
-
-    def _dynlib_extension(self):
-        if sys.platform == "darwin":
-            return "dylib"
-        if sys.platform == "linux":
-            return "so"
-        if sys.platform == "win32":
-            return "dll"
-        if sys.platform == "cygwin":
-            return "dll"
-        raise PlatformError(
-            f"don't know how to create distributions on platform {self.plat_name}"
-        )
 
 
 setup(ext_modules=ext_modules, cmdclass={"build_ext": build_hs_ext})

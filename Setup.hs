@@ -1,11 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
-
-import Distribution.Make (defaultMain)
-import Distribution.Simple (UserHooks(..), defaultMainWithHooks, simpleUserHooks)
-import Distribution.Simple.Setup (ConfigFlags(..))
-import Distribution.Simple.LocalBuildInfo (LocalBuildInfo(..))
+import Distribution.Simple (defaultMain)
 
 main :: IO ()
-main = 
-  defaultMainWithHooks
-    simpleUserHooks
+main = defaultMain
