@@ -44,7 +44,11 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements-ci.txt
         shell: sh
+        
+      - name: Build
+        run: python setup.py build_ext
+        shell: sh
 
-      - name: Build & Test
+      - name: Test
         run: tox run -e ${{ matrix.python.env }}
         shell: sh
