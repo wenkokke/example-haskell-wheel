@@ -9,7 +9,7 @@ from distutils.errors import DistutilsSetupError
 from distutils.spawn import find_executable
 
 ext_modules = [
-    Extension(name="fib._binding", sources=["src/py/fib/binding.i"]),
+    Extension(name="fib._binding", sources=["src/fib/binding.i"]),
 ]
 
 

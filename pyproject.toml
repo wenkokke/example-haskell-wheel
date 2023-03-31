@@ -9,6 +9,3 @@ authors = [{ name = 'Wen Kokke', email = 'wenkokke@users.noreply.github.com' }]
 description = 'An experiment in publishing a Haskell library as a Python Wheel.'
 readme = 'README.md'
 license = { file = 'LICENSE' }
-
-[tool.setuptools.packages.find]
-where = ["src/py"]

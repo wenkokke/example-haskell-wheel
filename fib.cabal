@@ -30,7 +30,7 @@ foreign-library _binding
   type:             native-shared
   options:          standalone
   c-sources:        src/fib/binding_wrap.c
-  hs-source-dirs:   src/hs
+  hs-source-dirs:   src
   other-modules:    Fib
   build-depends:    base >=4.7 && <5
   default-language: Haskell2010
