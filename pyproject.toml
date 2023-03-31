@@ -16,7 +16,7 @@ test = ["pytest"]
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = py37, py38, py39, py310, py311
+envlist = py37, py39, py310, py311
 isolated_build = true
 skip_missing_interpreters = true
 
@@ -24,7 +24,7 @@ skip_missing_interpreters = true
 extras =
   test
 commands_pre =
-  {envpython} setup.py build_ext --inplace
+  {envpython} setup.py build_ext
 commands =
   {envpython} -m pytest tests
 """
