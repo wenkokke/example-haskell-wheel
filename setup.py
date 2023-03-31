@@ -30,11 +30,6 @@ class build_hs_ext(build_ext):
         # accordingly.
         sources = self.swig_sources(sources, ext)
 
-        # Print info:
-        print(f"Outputs: {self.get_outputs()}")
-        for library_dir in self.library_dirs:
-          print(os.listdir(library_dir))
-
         # Next, run build the sources with Cabal.
         self.mkpath(self.build_temp)
         self.cabal_configure(ext)
