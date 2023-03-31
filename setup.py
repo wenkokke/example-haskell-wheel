@@ -37,7 +37,7 @@ class build_hs_ext(build_ext):
 
         # Next, run build the sources with Cabal.
         self.mkpath(self.build_temp)
-        self.cabal_configure(et)
+        self.cabal_configure(ext)
         self.cabal_build(ext)
         self.cabal_copy(ext)
 
