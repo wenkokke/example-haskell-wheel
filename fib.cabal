@@ -19,11 +19,15 @@ common warnings
   ghc-options: -Wall
 
 foreign-library _binding
-  import:           warnings
-  type:             native-shared
-  options:          standalone
-  c-sources:        src/fib/binding_wrap.c
-  hs-source-dirs:   src
-  other-modules:    Fib
-  build-depends:    base >=4.7 && <5
-  default-language: Haskell2010
+  import:            warnings
+  type:              native-shared
+  options:           standalone
+  c-sources:         src/fib/binding_wrap.c
+  hs-source-dirs:    src
+  other-modules:     Fib
+  build-depends:     base >=4.7 && <5
+  default-language:  Haskell2010
+  
+  if os(windows)
+    mod-def-file:    Fib.def
+    extra-libraries: python311.lib
