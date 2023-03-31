@@ -19,6 +19,8 @@ jobs:
           - { tag: windows-latest, name: Windows }
         ghc:
           - { version: "9.4.4", bootstrap-version: "9.0.2" }
+        cabal:
+          - { version: "3.8.1.0" }
         python:
           - { version: "3.11", env: "py311" }
 
@@ -31,6 +33,7 @@ jobs:
         with:
           ghc-version: ${{ matrix.ghc.version }}
           ghc-bootstrap-version: ${{ matrix.ghc.bootstrap-version }}
+          cabal-version: ${{ matrix.cabal.version }}
 
       - name: Setup Python
         uses: actions/setup-python@v4
