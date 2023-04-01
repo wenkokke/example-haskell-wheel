@@ -14,8 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - { tag: ubuntu-20.04, name: Linux, manylinux: manylinux_2_31 }
-          - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35 }
+          # 01-04-2023:
+          # All GitHub-hosted runners use an x86_64 architecture. If this changes,
+          # the manylinux platform tags below must take this into account.
+          - { tag: ubuntu-20.04, name: Linux, manylinux: manylinux_2_31_x86_64 }
+          - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35_x86_64 }
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
@@ -87,9 +90,11 @@ jobs:
 
       - # 01-04-2023:
         # Linux builds with cibuildwheel on Linux use the manylinux docker images,
-        # which do not come with GHC, and should be installed with CIBW_BEFORE_ALL
+        # which do not come with GHC, and should be installed with CIBW_BEFORE_ALL.
+        # The manylinux platform tags take architecture into account, so we check
+        # that we're definitely running on an x86_64 architecture before building.
         name: Build wheel (Linux)
-        if: runner.os == 'Linux'
+        if: runner.os == 'Linux' && runner.arch == 'X64'
         run: |
           python -m build \
             --wheel \
