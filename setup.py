@@ -93,19 +93,17 @@ class build_hs_ext(build_ext):
         return os.path.join(self.build_temp, self.cabal_component_library_name(ext))
 
     def cabal_component_library_name(self, ext):
+        if sys.platform not in ["darwin", "linux", "win32", "cygwin"]:
+            raise DistutilsPlatformError(f"unsupported platform {self.plat_name}")
+        library_prefix = "" if sys.platform in ["win32", "cygwin"] else "lib"
+        component_name = ext.name.split(".")[-1]
         dynlib_extension = {
             "darwin": "dylib",
             "linux": "so",
             "win32": "dll",
             "cygwin": "dll",
-        }.get(sys.platform, None)
-        library_prefix = "" if sys.platform in ["win32", "cygwin"] else "lib"
-        if not dynlib_extension:
-            raise DistutilsPlatformError(f"unsupported platform {self.plat_name}")
-        return f"{library_prefix}{self.cabal_component_name(ext)}{os.path.extsep}{dynlib_extension}"
-
-    def cabal_component_name(self, ext):
-        return ext.name.split(".")[-1]
+        }[sys.platform]
+        return f"{library_prefix}{component_name}{os.path.extsep}{dynlib_extension}"
 
     _runhaskell: Optional[str] = None
 
