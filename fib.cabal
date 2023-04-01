@@ -30,5 +30,3 @@ foreign-library _binding
   
   if os(windows)
     mod-def-file:    src/fib/binding.def
-  
-  -- extra-libraries: python311
