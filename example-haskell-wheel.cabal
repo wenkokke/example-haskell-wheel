@@ -16,6 +16,8 @@ custom-setup
   setup-depends:
     , base
     , Cabal
+    , filepath
+    , directory
 
 common warnings
   ghc-options: -Wall
