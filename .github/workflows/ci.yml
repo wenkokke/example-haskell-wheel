@@ -63,7 +63,7 @@ jobs:
         shell: sh
 
       - name: Build wheel
-        if: runner.os != 'Windows'
+        if: runner.os == 'macOS'
         uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_BUILD: "cp${{ matrix.python.tag }}-*"
@@ -75,10 +75,21 @@ jobs:
           config-file: "{package}/pyproject.toml"
 
       - # 01-04-2023:
-        # Windows builds in a virtualenv cannot find pythonXY.lib
-        name: Build wheel
+        # Windows builds with cibuildwheel cannot find pythonXY.lib from the venv
+        name: Build wheel (Window)
         if: runner.os == 'Windows'
-        run: python -m build --wheel --outdir wheelhouse
+        run: |
+          python -m build --wheel --outdir wheelhouse
+        shell: sh
+
+      - # 01-04-2023:
+        # Linux builds with cibuildwheel on Linux use the manylinux docker images,
+        # which do not come with GHC, and should be installed with CIBW_BEFORE_ALL
+        name: Build wheel (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          python -m build --wheel --outdir wheelhouse
+          auditwheel repair wheelhouse/*.whl
         shell: sh
 
       - uses: actions/upload-artifact@v3
