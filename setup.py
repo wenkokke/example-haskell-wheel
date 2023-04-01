@@ -80,7 +80,7 @@ class build_hs_ext(build_ext):
         print(cmd)
         exitCode = subprocess.call(args)
         if exitCode != 0:
-            raise ExecError(f"error occurred when running '{cmd}'")
+            raise DistutilsExecError(f"error occurred when running '{cmd}'")
 
     def cabal_component_library_path(self, ext):
         return os.path.join(self.build_temp, self.cabal_component_library_name(ext))
@@ -94,7 +94,7 @@ class build_hs_ext(build_ext):
         }.get(sys.platform, None)
         library_prefix = "" if sys.platform in ["win32", "cygwin"] else "lib"
         if not dynlib_extension:
-            raise PlatformError(f"unsupported platform {self.plat_name}")
+            raise DistutilsPlatformError(f"unsupported platform {self.plat_name}")
         return f"{library_prefix}{self.cabal_component_name(ext)}{os.path.extsep}{dynlib_extension}"
 
     def cabal_component_name(self, ext):
@@ -106,7 +106,7 @@ class build_hs_ext(build_ext):
         if self._runhaskell is None:
             self._runhaskell = find_executable("runhaskell")
             if self._runhaskell is None:
-                raise ExecError("could not find executable 'runhaskell'")
+                raise DistutilsExecError("could not find executable 'runhaskell'")
         return self._runhaskell
 
 
