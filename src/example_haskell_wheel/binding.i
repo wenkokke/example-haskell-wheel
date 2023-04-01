@@ -26,7 +26,7 @@ void hs_rts_exit()
     for (i = 0; i < $1; i++) {
       PyObject *o = PyList_GetItem($input, i);
       if (PyUnicode_Check(o)) {
-        $2[i] = PyUnicode_AsUTF8AndSize(o, 0);
+        $2[i] = (char *) PyUnicode_AsUTF8AndSize(o, 0);
       } else {
         PyErr_SetString(PyExc_TypeError, "list must contain strings");
         SWIG_fail;
