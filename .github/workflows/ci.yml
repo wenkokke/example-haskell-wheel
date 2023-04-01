@@ -63,7 +63,7 @@ jobs:
         run: tox run -e py${{ matrix.python.tag }}
         shell: sh
 
-      - name: Build wheel
+      - name: Build wheel (macOS)
         if: runner.os == 'macOS'
         uses: pypa/cibuildwheel@v2.12.1
         env:
