@@ -79,5 +79,5 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: wheelhouse-${{ matrix.ghc.version }}
+          name: wheelhouse-GHC-${{ matrix.ghc.version }}
           path: ./wheelhouse/*.whl
