@@ -7,7 +7,7 @@ from example_haskell_wheel._binding import (
 
 
 def fib(n: int) -> int:
-    hs_rts_init()
+    hs_rts_init(["example-haskell-wheel"])
     r = hs_fib(n)
     hs_rts_exit()
     return r
