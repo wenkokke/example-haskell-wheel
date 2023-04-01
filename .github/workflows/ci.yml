@@ -24,9 +24,9 @@ jobs:
         cabal:
           - { version: "3.8.1.0" }
         python:
-          - { version: "3.11", env: "py311" }
-          - { version: "3.10", env: "py310" }
-          - { version: "3.9", env: "py39" }
+          - { version: "3.11", tag: "311" }
+          - { version: "3.10", tag: "310" }
+          - { version: "3.9", tag: "39" }
 
     steps:
       - name: Checkout
@@ -57,5 +57,20 @@ jobs:
         shell: sh
 
       - name: Test
-        run: tox run -e ${{ matrix.python.env }}
+        run: tox run -e py${{ matrix.python.tag }}
         shell: sh
+        
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.1
+        env:
+          CIBW_BUILD: 'cp${{ matrix.python.tag }}-*'
+          CIBW_TEST_COMMAND: 'pytest {package}/tests'
+          CIBW_TEST_EXTRAS: 'test'
+        with:
+          package-dir: .
+          output-dir: wheelhouse
+          config-file: "{package}/pyproject.toml"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
