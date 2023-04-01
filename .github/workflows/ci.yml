@@ -27,6 +27,8 @@ jobs:
           - { version: "3.11", tag: "311" }
           - { version: "3.10", tag: "310" }
           - { version: "3.9", tag: "39" }
+          - { version: "3.8", tag: "38" }
+          - { version: "3.7", tag: "37" }
 
     steps:
       - name: Checkout
