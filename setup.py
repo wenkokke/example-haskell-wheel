@@ -70,7 +70,11 @@ class build_hs_ext(build_ext):
 
     def cabal_copy(self, ext):
         self.cabal(
-            ["copy", f"--builddir={self.build_temp}", f"--destdir={self.build_temp}"]
+            [
+                "copy",
+                f"--builddir={self.build_temp}",
+                f"--destdir={self.build_temp}",
+            ]
         )
         ext_source = self.cabal_component_library_path(ext)
         ext_target = self.get_ext_fullpath(ext.name)
