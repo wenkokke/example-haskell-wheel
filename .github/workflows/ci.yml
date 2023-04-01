@@ -17,7 +17,10 @@ jobs:
           # 01-04-2023:
           # All GitHub-hosted runners use an x86_64 architecture. If this changes,
           # the manylinux platform tags below must take this into account.
-          - { tag: ubuntu-20.04, name: Linux, manylinux: manylinux_2_31_x86_64 }
+          # 01-04-2023:
+          # Ubuntu 20.04 has patchelf version 0.10, but the latest auditwheel
+          # requires at least version 0.14.
+          # - { tag: ubuntu-20.04, name: Linux, manylinux: manylinux_2_31_x86_64 }
           - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35_x86_64 }
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
