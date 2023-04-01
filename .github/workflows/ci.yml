@@ -25,7 +25,7 @@ jobs:
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
-          - { version: "9.6.1" }
+          # - { version: "9.6.1" }
           - { version: "9.4.4" }
           # - { version: "9.2.7" }
         cabal:
@@ -36,6 +36,9 @@ jobs:
           - { version: "3.9", tag: "39" }
           - { version: "3.8", tag: "38" }
           - { version: "3.7", tag: "37" }
+        include:
+          - ghc: { version: "9.6.1" }
+            python: { version: "3.11", tag: "311" }
 
     steps:
       - name: Checkout
