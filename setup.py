@@ -57,7 +57,7 @@ class build_hs_ext(build_ext):
                 f"--dynlibdir=",
                 f"--datadir=",
                 f"--docdir=",
-                f"--builddir={os.path.abspath(self.build_temp)}",
+                f"--builddir={self.build_temp}",
                 f"--extra-prog-path={os.path.dirname(sys.executable)}",
                 *(f"--extra-lib-dirs={dir}" for dir in self.library_dirs),
                 *(f"--extra-include-dirs={dir}" for dir in self.include_dirs),
