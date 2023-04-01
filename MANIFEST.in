@@ -1,3 +1,4 @@
-include src/example_haskell_wheel/binding.py
-include src/example_haskell_wheel/_binding.*.so
-include src/example_haskell_wheel/_binding.*.pyd
+global-include *.cabal
+global-include *.def
+global-include *.hs
+global-include *.i
