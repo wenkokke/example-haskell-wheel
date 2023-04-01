@@ -1,7 +1,6 @@
 # Specific to this project
-/src/fib/binding.py
-/src/fib/_binding.*.so
-/src/fib/binding_wrap.c
+/src/example_haskell_wheel/binding.py
+/src/example_haskell_wheel/binding_wrap.c
 
 # Haskell
 dist

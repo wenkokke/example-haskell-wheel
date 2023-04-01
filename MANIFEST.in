@@ -1,0 +1,3 @@
+include src/example_haskell_wheel/binding.py
+include src/example_haskell_wheel/_binding.*.so
+include src/example_haskell_wheel/_binding.*.pyd

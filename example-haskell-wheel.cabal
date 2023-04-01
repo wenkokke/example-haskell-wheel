@@ -29,9 +29,9 @@ foreign-library _binding
 
   if os(windows)
     options:         standalone
-    mod-def-file:    src/example-haskell-wheel/binding.def
+    mod-def-file:    src/example_haskell_wheel/binding.def
 
-  c-sources:         src/example-haskell-wheel/binding_wrap.c
+  c-sources:         src/example_haskell_wheel/binding_wrap.c
   hs-source-dirs:    src
   other-modules:     Fib
   build-depends:     base >=4.7 && <5
