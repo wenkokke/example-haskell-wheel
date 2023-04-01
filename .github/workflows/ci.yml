@@ -17,17 +17,17 @@ jobs:
           # 01-04-2023:
           # All GitHub-hosted runners use an x86_64 architecture. If this changes,
           # the manylinux platform tags below must take this into account.
+          - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35_x86_64 }
           # 01-04-2023:
           # Ubuntu 20.04 has patchelf version 0.10, but the latest auditwheel
           # requires at least version 0.14.
           # - { tag: ubuntu-20.04, name: Linux, manylinux: manylinux_2_31_x86_64 }
-          - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35_x86_64 }
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
-          - { version: "9.6.1", bootstrap-version: "9.4.4" }
-          - { version: "9.4.4", bootstrap-version: "9.0.2" }
-          # - { version: "9.2.7", bootstrap-version: "9.0.2" }
+          - { version: "9.6.1" }
+          - { version: "9.4.4" }
+          # - { version: "9.2.7" }
         cabal:
           - { version: "3.8.1.0" }
         python:
@@ -41,7 +41,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup GHC ${{ inputs.ghc-version }}
+      - name: Setup GHC ${{ matrix.ghc.version }}
         if: runner.os == 'macOS' || runner.os == 'Windows'
         uses: haskell/actions/setup@v2
         with:
