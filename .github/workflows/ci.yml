@@ -100,7 +100,6 @@ jobs:
             --plat=${{ matrix.os.manylinux }} \
             wheelhouselocal/*.whl
         shell: sh
-        working-directory: wheelhouse
 
       - uses: actions/upload-artifact@v3
         with:
