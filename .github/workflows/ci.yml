@@ -40,7 +40,7 @@ jobs:
           - { version: "9.4.4" }
           # - { version: "9.2.7" }
         cabal:
-          - { version: "3.8.1.0" }
+          - { version: "3.10.1.0" }
         python:
           - { version: "3.11", tag: "311" }
           - { version: "3.10", tag: "310" }
