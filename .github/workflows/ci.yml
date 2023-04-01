@@ -18,6 +18,7 @@ jobs:
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
+          - { version: "9.6.1", bootstrap-version: "9.4.4" }
           - { version: "9.4.4", bootstrap-version: "9.0.2" }
           # - { version: "9.2.7", bootstrap-version: "9.0.2" }
         cabal:
