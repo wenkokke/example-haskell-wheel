@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = 'example-haskell-wheel'
-version = '0.1.0a3'
+version = '0.1.0a4'
 authors = [{ name = 'Wen Kokke', email = 'wenkokke@users.noreply.github.com' }]
 description = 'An experiment in publishing a Haskell library as a Python Wheel.'
 readme = 'README.md'

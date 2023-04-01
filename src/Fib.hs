@@ -3,22 +3,24 @@
 
 module Fib where
 
-import Data.Bits
 import Data.List
 import Foreign.C.Types (CInt (..))
 
 -- Taken from:
 -- https://wiki.haskell.org/The_Fibonacci_sequence#Fastest_Fib_in_the_West
-fib :: Int -> Integer
-fib n =
-  snd . foldl' fib_ (1, 0) . dropWhile not $
-    [testBit n k | k <- let s = bitSize n in [s - 1, s - 2 .. 0]]
+fib :: Int -> Int
+fib n = snd . foldl fib_ (1, 0) . map (toEnum . fromIntegral) $ unfoldl divs n
   where
+    unfoldl f x = case f x of
+      Nothing -> []
+      Just (u, v) -> unfoldl f v ++ [u]
+
+    divs 0 = Nothing
+    divs k = Just (uncurry (flip (,)) (k `divMod` 2))
+
     fib_ (f, g) p
-      | p = (f * (f + 2 * g), ss)
-      | otherwise = (ss, g * (2 * f - g))
-      where
-        ss = f * f + g * g
+      | p = (f * (f + 2 * g), f ^ 2 + g ^ 2)
+      | otherwise = (f ^ 2 + g ^ 2, g * (2 * f - g))
 
 hs_fib :: CInt -> CInt
 hs_fib = fromIntegral . fib . fromIntegral
