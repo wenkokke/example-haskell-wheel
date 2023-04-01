@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          # - { tag: ubuntu-latest, name: Linux }
+          - { tag: ubuntu-latest, name: Linux }
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
@@ -32,11 +32,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Haskell
-        uses: ./.github/actions/setup-haskell
+      - name: Setup GHC ${{ inputs.ghc-version }}
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        uses: haskell/actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc.version }}
-          ghc-bootstrap-version: ${{ matrix.ghc.bootstrap-version }}
           cabal-version: ${{ matrix.cabal.version }}
 
       - name: Setup Python
@@ -48,10 +48,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install --upgrade pip
-          pip install -r requirements-ci.txt
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-ci.txt
         shell: sh
-        
+
       - name: Build
         run: python setup.py build_ext
         shell: sh
@@ -59,20 +59,22 @@ jobs:
       - name: Test
         run: tox run -e py${{ matrix.python.tag }}
         shell: sh
-        
+
       - name: Build wheel
         if: runner.os != 'Windows'
         uses: pypa/cibuildwheel@v2.12.1
         env:
-          CIBW_BUILD: 'cp${{ matrix.python.tag }}-*'
-          CIBW_TEST_COMMAND: 'pytest {package}/tests'
-          CIBW_TEST_EXTRAS: 'test'
+          CIBW_BUILD: "cp${{ matrix.python.tag }}-*"
+          CIBW_TEST_COMMAND: "pytest {package}/tests"
+          CIBW_TEST_EXTRAS: "test"
         with:
           package-dir: .
           output-dir: wheelhouse
           config-file: "{package}/pyproject.toml"
-          
-      - name: Build wheel
+
+      - # 01-04-2023:
+        # Windows builds in a virtualenv cannot find pythonXY.lib
+        name: Build wheel
         if: runner.os == 'Windows'
         run: python -m build --wheel --outdir wheelhouse
         shell: sh

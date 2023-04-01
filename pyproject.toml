@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = 'fib'
-version = '0.1.0'
+version = '0.1.0a1'
 authors = [{ name = 'Wen Kokke', email = 'wenkokke@users.noreply.github.com' }]
 description = 'An experiment in publishing a Haskell library as a Python Wheel.'
 readme = 'README.md'
