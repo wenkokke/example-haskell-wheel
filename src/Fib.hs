@@ -8,7 +8,6 @@ import Foreign.Ptr (Ptr)
 import Foreign.C.Types (CInt (..))
 import Foreign.C.String (CString, peekCString)
 import Foreign.Marshal.Array (peekArray)
-import System.Environment (getArgs)
 import Text.Read (readMaybe)
 
 -- Taken from:
