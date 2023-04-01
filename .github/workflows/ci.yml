@@ -80,7 +80,9 @@ jobs:
         name: Build wheel (Window)
         if: runner.os == 'Windows'
         run: |
-          python -m build --wheel --outdir wheelhouse
+          python -m build \
+            --wheel \
+            --outdir wheelhouse
         shell: sh
 
       - # 01-04-2023:
@@ -89,8 +91,14 @@ jobs:
         name: Build wheel (Linux)
         if: runner.os == 'Linux'
         run: |
-          python -m build --wheel --outdir dist
-          auditwheel repair --wheel-dir=wheelhouse --plat=${{ matrix.os.manylinux }} dist/*.whl
+          python -m build \
+            --wheel \
+            --outdir wheelhouselocal
+          mkdir -p wheelhouse
+          auditwheel repair \
+            --wheel-dir=wheelhouse \
+            --plat=${{ matrix.os.manylinux }} \
+            wheelhouselocal/*.whl
         shell: sh
         working-directory: wheelhouse
 
