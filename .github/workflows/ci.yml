@@ -60,7 +60,8 @@ jobs:
         run: tox run -e py${{ matrix.python.tag }}
         shell: sh
         
-      - name: Build wheels
+      - name: Build wheel
+        if: runner.os != 'Windows'
         uses: pypa/cibuildwheel@v2.12.1
         env:
           CIBW_BUILD: 'cp${{ matrix.python.tag }}-*'
