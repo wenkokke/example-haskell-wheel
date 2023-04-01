@@ -1,4 +1,4 @@
-from fib._binding import hs_rts_init, hs_rts_exit, hs_fib
+from example_haskell_wheel._binding import hs_rts_init, hs_rts_exit, hs_fib
 
 
 def fib(n: int) -> int:

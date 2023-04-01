@@ -4,21 +4,28 @@ import subprocess
 from typing import Optional
 from setuptools import Extension, setup
 from setuptools.command.build_ext import build_ext
-from distutils.errors import DistutilsExecError, DistutilsPlatformError, DistutilsSetupError
+from distutils.errors import (
+    DistutilsExecError,
+    DistutilsPlatformError,
+    DistutilsSetupError,
+)
 from distutils.spawn import find_executable
 
 ext_modules = [
-    Extension(name="fib._binding", sources=["src/fib/binding.i"]),
+    Extension(
+        name="example_haskell_wheel._binding",
+        sources=["src/example_haskell_wheel/binding.i"],
+    ),
 ]
 
 
 class build_hs_ext(build_ext):
     def finalize_options(self):
         super().finalize_options()
-        
+
         if sys.platform in ["win32", "cygwin"]:
             self.libraries.append("python%d%d" % sys.version_info[:2])
-        
+
     def build_extension(self, ext):
         sources = ext.sources
         if sources is None or not isinstance(sources, (list, tuple)):
@@ -42,33 +49,29 @@ class build_hs_ext(build_ext):
         self.cabal_copy(ext)
 
     def cabal_configure(self, ext):
-        args = ["configure"]
-        args.extend(f"--extra-lib-dirs={dir}" for dir in self.library_dirs)
-        args.extend(f"--extra-include-dirs={dir}" for dir in self.include_dirs)
-        args.append(f"--extra-prog-path={os.path.dirname(sys.executable)}")
-        args.extend(f"--ghc-options=-optl-l{library}" for library in self.libraries)
-        args.extend(
+        self.cabal(
             [
+                "configure",
                 f"--prefix={os.path.abspath(self.build_temp)}",
                 f"--libdir=",
                 f"--dynlibdir=",
                 f"--datadir=",
                 f"--docdir=",
                 f"--builddir={os.path.abspath(self.build_temp)}",
+                f"--extra-prog-path={os.path.dirname(sys.executable)}",
+                *(f"--extra-lib-dirs={dir}" for dir in self.library_dirs),
+                *(f"--extra-include-dirs={dir}" for dir in self.include_dirs),
+                *(f"--ghc-options=-optl-l{library}" for library in self.libraries),
             ]
         )
-        self.cabal(args)
 
     def cabal_build(self, ext):
-        args = ["build"]
-        args.append(f"--builddir={self.build_temp}")
-        self.cabal(args)
+        self.cabal(["build", f"--builddir={self.build_temp}"])
 
     def cabal_copy(self, ext):
-        args = ["copy"]
-        args.append(f"--builddir={self.build_temp}")
-        args.append(f"--destdir={self.build_temp}")
-        self.cabal(args)
+        self.cabal(
+            ["copy", f"--builddir={self.build_temp}", f"--destdir={self.build_temp}"]
+        )
         ext_source = self.cabal_component_library_path(ext)
         ext_target = self.get_ext_fullpath(ext.name)
         self.mkpath(os.path.dirname(ext_target))

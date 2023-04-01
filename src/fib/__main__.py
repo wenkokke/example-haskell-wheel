@@ -1,3 +1,0 @@
-import fib
-
-fib.main()
