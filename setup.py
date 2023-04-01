@@ -3,9 +3,8 @@ import sys
 import subprocess
 from typing import Optional
 from setuptools import Extension, setup
-from setuptools.errors import ExecError, PlatformError
 from setuptools.command.build_ext import build_ext
-from distutils.errors import DistutilsSetupError
+from distutils.errors import DistutilsExecError, DistutilsPlatformError, DistutilsSetupError
 from distutils.spawn import find_executable
 
 ext_modules = [
