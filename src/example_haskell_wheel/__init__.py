@@ -9,4 +9,5 @@ def fib(n: int) -> int:
 
 
 def main():
+    print("Haskell says the 42nd Fibonacci number is...")
     print(fib(42))
