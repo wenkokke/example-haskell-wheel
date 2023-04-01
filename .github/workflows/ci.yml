@@ -88,7 +88,11 @@ jobs:
         run: |
           python -m build \
             --wheel \
-            --outdir wheelhouse
+            --outdir=wheelhouselocal
+          mkdir -p wheelhouse
+          delvewheel repair \
+            --wheel-dir=wheelhouse \
+            wheelhouselocal/*.whl
         shell: sh
 
       - # 01-04-2023:
@@ -101,7 +105,7 @@ jobs:
         run: |
           python -m build \
             --wheel \
-            --outdir wheelhouselocal
+            --outdir=wheelhouselocal
           mkdir -p wheelhouse
           auditwheel repair \
             --wheel-dir=wheelhouse \
