@@ -14,6 +14,12 @@ ext_modules = [
 
 
 class build_hs_ext(build_ext):
+    def finalize_options(self):
+        super().finalize_options()
+        
+        if sys.platform in ["win32", "cygwin"]:
+            self.libraries.append("python%d%d" % sys.version_info[:2])
+        
     def build_extension(self, ext):
         sources = ext.sources
         if sources is None or not isinstance(sources, (list, tuple)):
