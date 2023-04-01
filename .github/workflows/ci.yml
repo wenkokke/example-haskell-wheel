@@ -14,7 +14,8 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - { tag: ubuntu-latest, name: Linux }
+          - { tag: ubuntu-20.04, name: Linux, manylinux: manylinux_2_31 }
+          - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35 }
           - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
@@ -89,8 +90,9 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           python -m build --wheel --outdir wheelhouse
-          auditwheel repair wheelhouse/*.whl
+          auditwheel repair --wheel-dir=. --plat=${{ matrix.os.manylinux }} *.whl
         shell: sh
+        working-directory: wheelhouse
 
       - uses: actions/upload-artifact@v3
         with:
