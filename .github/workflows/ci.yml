@@ -28,6 +28,19 @@ jobs:
           # 01-04-2023:
           # All GitHub-hosted runners use an x86_64 architecture. If this changes,
           # the manylinux platform tags below must take this into account.
+          # 03-04-2023:
+          # We must specify an exact Ubuntu version, because each Ubuntu version
+          # corresponds to an exact libc version, which must be passed to auditwheel,
+          # as part of the manylinux tag:
+          # - ubuntu-20.04 uses libc 2.31
+          # - ubuntu-22.04 uses libc 2.35
+          # In general, libc is FORWARDS but NOT BACKWARDS compatible, e.g., binaries
+          # built against libc 2.31 can be run on a system with libc 2.35, but not the
+          # other way around. You can get the libc version via Python by running:
+          # ```python
+          # import platform
+          # print(platform.libc_ver())
+          # ```
           - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35_x86_64 }
           # 01-04-2023:
           # Ubuntu 20.04 has patchelf version 0.10, but the latest auditwheel
@@ -38,6 +51,9 @@ jobs:
         ghc:
           - { version: "9.6.1" }
           - { version: "9.4.4" }
+          # 01-04-2023:
+          # Compilation with GHC 9.2.7 fails because `ld` cannot find the library `HSrts`.
+          # See: https://github.com/wenkokke/example-haskell-wheel/issues/1
           # - { version: "9.2.7" }
         cabal:
           - { version: "3.10.1.0" }
@@ -53,7 +69,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup GHC ${{ matrix.ghc.version }}
-        if: runner.os == 'macOS' || runner.os == 'Windows'
         uses: haskell/actions/setup@v2
         with:
           ghc-version: ${{ matrix.ghc.version }}
