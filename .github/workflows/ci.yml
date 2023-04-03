@@ -77,7 +77,7 @@ jobs:
         shell: sh
 
       - name: Test
-        run: tox run -e py${{ matrix.python.tag }}
+        run: pipx run tox run -e py${{ matrix.python.tag }}
         shell: sh
 
       - name: Build wheel (macOS)
@@ -98,8 +98,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           mkdir -p wheelhouse
-          python -m build --wheel --outdir=wheelhouse
-          delvewheel repair --wheel-dir=wheelhouse wheelhouse/*.whl
+          pipx run --spec build pyproject-build --wheel --outdir=wheelhouse
+          pipx run delvewheel repair --wheel-dir=wheelhouse wheelhouse/*.whl
         shell: sh
 
       - # 01-04-2023:
@@ -111,9 +111,8 @@ jobs:
         if: runner.os == 'Linux' && runner.arch == 'X64'
         run: |
           mkdir -p wheelhouse
-          python -m build --wheel --outdir=wheelhouselocal
-          mkdir -p wheelhouse
-          auditwheel repair --wheel-dir=wheelhouse --plat=${{ matrix.os.manylinux }} wheelhouselocal/*.whl
+          pipx run --spec build pyproject-build --wheel --outdir=wheelhouselocal
+          pipx run auditwheel repair --wheel-dir=wheelhouse --plat=${{ matrix.os.manylinux }} wheelhouselocal/*.whl
         shell: sh
 
       - uses: actions/upload-artifact@v3
