@@ -19,14 +19,20 @@ ext_modules = [
 ]
 
 
-class build_hs_ext(build_ext):
+class cabal_build_ext(build_ext):
     def finalize_options(self):
         super().finalize_options()
 
         if sys.platform in ["win32", "cygwin"]:
             self.libraries.append("python%d%d" % sys.version_info[:2])
 
-    def build_extension(self, ext):
+    def build_extension(self, ext: Extension):
+        # Taken from setuptools:
+        # https://github.com/pypa/setuptools/blob/245d72a8aa4d47e1811425213aba2a06a0bb64fa/setuptools/command/build_ext.py#L240-L241
+        ext._convert_pyx_sources_to_lang()
+
+        # Taken from distutils:
+        # https://github.com/pypa/distutils/blob/4435cec31b8eb5712aa8bf993bea3f07051c24d8/distutils/command/build_ext.py#L504-L513
         sources = ext.sources
         if sources is None or not isinstance(sources, (list, tuple)):
             raise DistutilsSetupError(
@@ -42,12 +48,19 @@ class build_hs_ext(build_ext):
         # accordingly.
         sources = self.swig_sources(sources, ext)
 
-        # Next, run build the sources with Cabal.
+        # Next, build the sources with Cabal.
+        # NOTE: This requires a valid .cabal file that defines a foreign library called _binding.
         self.mkpath(self.build_temp)
-        self.cabal_configure()
-        self.cabal_build(ext)
+        self.cabal_configure_ext()
+        self.cabal_build_ext(ext)
 
-    def cabal_configure(self):
+        # Taken from setuptools:
+        # https://github.com/pypa/setuptools/blob/245d72a8aa4d47e1811425213aba2a06a0bb64fa/setuptools/command/build_ext.py#L247-L249
+        if ext._needs_stub:
+            build_lib = self.get_finalized_command("build_py").build_lib
+            self.write_stub(build_lib, ext)
+
+    def cabal_configure_ext(self):
         self.cabal(
             [
                 "configure",
@@ -57,7 +70,7 @@ class build_hs_ext(build_ext):
             ]
         )
 
-    def cabal_build(self, ext):
+    def cabal_build_ext(self, ext: Extension):
         self.mkpath(self.build_temp)
         self.cabal(["build"], env={"INSTALLDIR": self.build_temp, **os.environ})
         lib_filename = self.get_cabal_foreign_library_filename(ext)
@@ -96,4 +109,12 @@ class build_hs_ext(build_ext):
         return self._cabal
 
 
-setup(ext_modules=ext_modules, cmdclass={"build_ext": build_hs_ext})
+def main():
+    setup(
+        ext_modules=ext_modules,
+        cmdclass={"build_ext": cabal_build_ext},
+    )
+
+
+if __name__ == "__main__":
+    main()
