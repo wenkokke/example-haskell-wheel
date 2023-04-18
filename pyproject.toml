@@ -18,19 +18,14 @@ test = ["pytest >=7.1,<8"]
 example-haskell-wheel = "example_haskell_wheel:main"
 
 [tool.cibuildwheel]
+# 18-04-2023:
+# Cross-compilation with cibuildwheel does not work with Cabal.
+archs = ["native"]
 skip = ["pp*", "*musllinux*"]
 test-command = "pytest {package}/tests"
 test-extras = "test"
 
-[tool.cibuildwheel.macos]
-# 18-04-2023:
-# Cross-compilation with cibuildwheel does not work with Cabal.
-archs = ["x86_64"]
-
 [tool.cibuildwheel.linux]
-# 18-04-2023:
-# Cross-compilation with cibuildwheel does not work with Cabal.
-archs = ["x86_64"]
 before-all = [
   "ln -s /usr/lib64/libgmp.so.10 /usr/lib64/libgmp.so",
   "yum install -y wget",
@@ -47,11 +42,6 @@ before-all = [
   "cd /tmp/cabal/cabal-install && /tmp/cabal/_build/bin/cabal v2-update",
   "cd /tmp/cabal/cabal-install && /tmp/cabal/_build/bin/cabal v2-install cabal-install --constraint='lukko -ofd-locking' --overwrite-policy=always --install-method=copy --installdir=/usr/local/bin"
 ]
-
-[tool.cibuildwheel.windows]
-# 18-04-2023:
-# Cross-compilation with cibuildwheel does not work with Cabal.
-archs = ["AMD64"]
 
 [tool.tox]
 legacy_tox_ini = """
