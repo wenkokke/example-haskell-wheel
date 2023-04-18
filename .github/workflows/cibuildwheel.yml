@@ -31,12 +31,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - os: { tag: ubuntu-latest, name: Linux }
-          - os: { tag: macos-latest, name: macOS }
+        os:
+          - { tag: ubuntu-latest, name: Linux }
+          - { tag: macos-latest, name: macOS }
+        ghc:
+          - { version: "9.4.4" }
+        cabal:
+          - { version: "3.8.1.0" }
 
     steps:
       - uses: actions/checkout@v3
+
+      - name: Setup GHC ${{ matrix.ghc.version }}
+        if: runner.os == 'macOS'
+        uses: haskell/actions/setup@v2
+        with:
+          ghc-version: ${{ matrix.ghc.version }}
+          cabal-version: ${{ matrix.cabal.version }}
 
       - uses: pypa/cibuildwheel@v2.12.1
         with:
