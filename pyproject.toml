@@ -35,7 +35,7 @@ before-all = [
   "cd /tmp/ghc && ./configure",
   "cd /tmp/ghc && make install",
   "which ghc",
-  "wget -q https://hackage.haskell.org/package/cabal-install-3.10.1.0/cabal-install-3.8.1.0.tar.gz -O /tmp/cabal.tar.gz",
+  "wget -q https://hackage.haskell.org/package/cabal-install-3.8.1.0/cabal-install-3.8.1.0.tar.gz -O /tmp/cabal.tar.gz",
   "mkdir /tmp/cabal",
   "tar xf /tmp/cabal.tar.gz -C /tmp/cabal --strip-components 1",
   "cd /tmp/cabal && runhaskell Setup.hs configure",
