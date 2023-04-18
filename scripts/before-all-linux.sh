@@ -29,7 +29,7 @@ then
     wget "${CABAL_RELEASE_URL}" -O /tmp/cabal.zip
     unzip -q /tmp/cabal.zip -d /tmp && mv /tmp/cabal-cabal-install-v3.10.1.0 /tmp/cabal
     sed -ie 's/+ofd-locking/-ofd-locking/' /tmp/cabal/bootstrap/linux-9.4.4.json
-    cd /tmp/cabal && python ./bootstrap/bootstrap.py -d ./bootstrap/linux-9.4.4.json -w /usr/local/bin/ghc-9.4.4
+    cd /tmp/cabal && python3 ./bootstrap/bootstrap.py -d ./bootstrap/linux-9.4.4.json -w /usr/local/bin/ghc-9.4.4
     cd /tmp/cabal/cabal-install && /tmp/cabal/_build/bin/cabal v2-update
     cd /tmp/cabal/cabal-install && /tmp/cabal/_build/bin/cabal v2-install cabal-install --constraint='lukko -ofd-locking' --overwrite-policy=always --install-method=copy --installdir=/usr/local/bin
 fi
@@ -38,7 +38,7 @@ fi
 if [ "$ID" = "alpine" ]
 then
     # GHC release URL
-    GHC_RELEASE_URL="https://downloads.haskell.org/~ghc/9.4.4/ghc-9.4.4-x86_64-alpine3_12-linux-static.tar.xz"
+    GHC_RELEASE_URL="https://downloads.haskell.org/~ghc/9.4.4/ghc-9.4.4-x86_64-alpine3_12-linux-static-int_native.tar.xz"
     
     # Install GHC
     wget -q "${GHC_RELEASE_URL}" -O /tmp/ghc.tar.xz
@@ -53,7 +53,7 @@ then
     # Install Cabal
     wget "${CABAL_RELEASE_URL}" -O /tmp/cabal.zip
     unzip -q /tmp/cabal.zip -d /tmp && mv /tmp/cabal-cabal-install-v3.10.1.0 /tmp/cabal
-    cd /tmp/cabal && python ./bootstrap/bootstrap.py -d ./bootstrap/linux-9.4.4.json -w /usr/local/bin/ghc-9.4.4
+    cd /tmp/cabal && python3 ./bootstrap/bootstrap.py -d ./bootstrap/linux-9.4.4.json -w /usr/local/bin/ghc-9.4.4
     cd /tmp/cabal/cabal-install && /tmp/cabal/_build/bin/cabal v2-update
     cd /tmp/cabal/cabal-install && /tmp/cabal/_build/bin/cabal v2-install cabal-install --overwrite-policy=always --install-method=copy --installdir=/usr/local/bin
 fi
