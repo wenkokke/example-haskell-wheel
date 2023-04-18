@@ -2,8 +2,7 @@
 requires = [
   "find_libpython>=0.3; sys_platform == 'win32'",
   "setuptools>=45",
-  "swig>=4",
-  "wheel>=0.35"
+  "swig>=4"
 ]
 build-backend = "setuptools.build_meta"
 
@@ -40,29 +39,6 @@ test-extras = "test"
 
 [tool.cibuildwheel.linux]
 before-all = "source /etc/os-release && {package}/scripts/before-all-$ID.sh"
-repair-wheel-command = [
-  # Use auditwheel to repair wheels on Linux
-  "auditwheel repair -w {dest_dir} {wheel}",
-  # Use abi3audit to catch issues with Limited API wheels
-  "pipx run abi3audit --strict --report {wheel}",
-]
-
-[tool.cibuildwheel.macos]
-repair-wheel-command = [
-  # Use delocate to repair wheels on macOS
-  "delocate-wheel --require-archs {delocate_archs} -w {dest_dir} -v {wheel}",
-  # Use abi3audit to catch issues with Limited API wheels
-  "pipx run abi3audit --strict --report {wheel}",
-]
-
-[tool.cibuildwheel.windows]
-before-build = "pip install delvewheel"
-repair-wheel-command = [
-  # Use delvewheel to repair wheels on Windows
-  "delvewheel repair -w {dest_dir} {wheel}",
-  # Use abi3audit to catch issues with Limited API wheels
-  "pipx run abi3audit --strict --report {wheel}"
-]
 
 [tool.tox]
 legacy_tox_ini = """

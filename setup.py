@@ -4,7 +4,6 @@ import subprocess
 import typing
 import setuptools
 import setuptools.command.build_ext
-import wheel.bdist_wheel
 
 # 03-04-2023:
 # The imports from distutils must come AFTER the imports from setuptools,
@@ -14,26 +13,10 @@ import wheel.bdist_wheel
 import distutils.errors
 import distutils.spawn
 
-
-ext_modules = [
-    setuptools.Extension(
-        name="example_haskell_wheel._binding",
-        sources=["src/example_haskell_wheel/binding.i"],
-        define_macros=[("Py_LIMITED_API", "0x03060000")],
-        py_limited_api=True,
-    ),
-]
-
-
-class cabal_bdist_wheel_abi3(wheel.bdist_wheel.bdist_wheel):
-    def get_tag(self):
-        python, abi, plat = super().get_tag()
-
-        if python.startswith("cp") and abi in ["cp310", "cp311"]:
-            # On CPython, our wheels are abi3 compatible back to 3.10
-            return "cp310", "abi3", plat
-
-        return python, abi, plat
+ext_module = setuptools.Extension(
+    name="example_haskell_wheel._binding",
+    sources=["src/example_haskell_wheel/binding.i"],
+)
 
 
 class cabal_build_ext(setuptools.command.build_ext.build_ext):
@@ -147,11 +130,8 @@ class cabal_build_ext(setuptools.command.build_ext.build_ext):
 
 def main():
     setuptools.setup(
-        ext_modules=ext_modules,
-        cmdclass={
-            "build_ext": cabal_build_ext,
-            "bdist_wheel": cabal_bdist_wheel_abi3,
-        },
+        ext_modules=[ext_module],
+        cmdclass={"build_ext": cabal_build_ext},
     )
 
 
