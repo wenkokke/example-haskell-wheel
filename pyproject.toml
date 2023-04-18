@@ -19,7 +19,7 @@ example-haskell-wheel = "example_haskell_wheel:main"
 
 [tool.cibuildwheel]
 # 18-04-2023:
-# Cross-compilation with cibuildwheel does not work with Cabal.
+# Cross-compilation does not work with GHC and Cabal.
 archs = ["native"]
 build-frontend = "build"
 skip = ["pp*", "*musllinux*"]
