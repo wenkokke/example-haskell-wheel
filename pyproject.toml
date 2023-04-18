@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=45", "find_libpython>=0.3"]
+requires = ["find_libpython>=0.3", "setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
