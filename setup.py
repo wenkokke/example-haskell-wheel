@@ -25,6 +25,7 @@ class cabal_build_ext(build_ext):
 
         if sys.platform in ["win32", "cygwin"]:
             import find_libpython
+
             library_dir, library = os.path.split(find_libpython.find_libpython())
             libname, _libext = os.path.splitext(library)
             libname = libname[3:] if libname.startswith("lib") else libname
@@ -72,6 +73,8 @@ class cabal_build_ext(build_ext):
                 *(f"--extra-lib-dirs={dir}" for dir in self.library_dirs),
                 *(f"--extra-include-dirs={dir}" for dir in self.include_dirs),
                 *(f"--ghc-options=-optl-l{library}" for library in self.libraries),
+                *(f"--ghc-options=-D{symbol}={value}" for symbol, value in self.define),
+                *(f"--ghc-options=-U{symbol}" for symbol in self.undef),
             ]
         )
 
