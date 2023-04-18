@@ -15,6 +15,8 @@ ext_modules = [
     Extension(
         name="example_haskell_wheel._binding",
         sources=["src/example_haskell_wheel/binding.i"],
+        define_macros=[("Py_LIMITED_API", "0x03060000")],
+        py_limited_api=True,
     ),
 ]
 
@@ -57,7 +59,7 @@ class cabal_build_ext(build_ext):
         # Next, build the sources with Cabal.
         # NOTE: This requires a valid .cabal file that defines a foreign library called _binding.
         self.mkpath(self.build_temp)
-        self.cabal_configure_ext()
+        self.cabal_configure_ext(ext)
         self.cabal_build_ext(ext)
 
         # Taken from setuptools:
@@ -66,15 +68,20 @@ class cabal_build_ext(build_ext):
             build_lib = self.get_finalized_command("build_py").build_lib
             self.write_stub(build_lib, ext)
 
-    def cabal_configure_ext(self):
+    def cabal_configure_ext(self, ext: Extension):
+        library_dirs = [*(self.library_dirs or []), *(ext.library_dirs or [])]
+        include_dirs = [*(self.include_dirs or []), *(ext.include_dirs or [])]
+        libraries = [*(self.libraries or []), *(ext.libraries or [])]
+        define = [*(self.define or []), *(ext.define_macros or [])]
+        undef = [*(self.undef or []), *(ext.undef_macros or [])]
         self.cabal(
             [
                 "configure",
-                *(f"--extra-lib-dirs={dir}" for dir in self.library_dirs),
-                *(f"--extra-include-dirs={dir}" for dir in self.include_dirs),
-                *(f"--ghc-options=-optl-l{library}" for library in self.libraries),
-                *(f"--ghc-options=-D{symbol}={value}" for symbol, value in self.define),
-                *(f"--ghc-options=-U{symbol}" for symbol in self.undef),
+                *(f"--extra-lib-dirs={dir}" for dir in library_dirs),
+                *(f"--extra-include-dirs={dir}" for dir in include_dirs),
+                *(f"--ghc-options=-optl-l{library}" for library in libraries),
+                *(f"--ghc-options=-D{symbol}={value}" for symbol, value in define),
+                *(f"--ghc-options=-U{symbol}" for symbol in undef),
             ]
         )
 
