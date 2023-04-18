@@ -1,4 +1,4 @@
-name: cibuildwheel
+name: CI
 
 on:
   push:
