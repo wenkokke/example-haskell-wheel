@@ -9,12 +9,40 @@ authors = [{ name = 'Wen Kokke', email = 'wenkokke@users.noreply.github.com' }]
 description = 'An experiment in publishing a Haskell library as a Python Wheel.'
 readme = 'README.md'
 license = { file = 'LICENSE' }
+requires-python = ">=3.7,<3.12"
 
 [project.optional-dependencies]
 test = ["pytest >=7.1,<8"]
 
 [project.scripts]
 example-haskell-wheel = "example_haskell_wheel:main"
+
+[tool.cibuildwheel]
+# 17-04-2023:
+# Cross-compilation with cibuildwheel does not work with Cabal.
+archs = ["x86_64"]
+skip = ["pp*", "*musllinux*"]
+test-command = "pytest {package}/tests"
+test-extras = "test"
+
+[tool.cibuildwheel.linux]
+before-all = [
+  "ln -s /usr/lib64/libgmp.so.10 /usr/lib64/libgmp.so",
+  "yum install -y wget",
+  "wget https://downloads.haskell.org/~ghc/9.4.4/ghc-9.4.4-x86_64-centos7-linux.tar.xz -O /tmp/ghc.tar.xz",
+  "mkdir /tmp/ghc",
+  "tar xvf /tmp/ghc.tar.xz -C /tmp/ghc --strip-components 1",
+  "cd /tmp/ghc && ./configure",
+  "cd /tmp/ghc && make install",
+  "which ghc",
+  "wget https://hackage.haskell.org/package/cabal-install-3.10.1.0/cabal-install-3.8.1.0.tar.gz -O /tmp/cabal.tar.gz",
+  "mkdir /tmp/cabal",
+  "tar xvf /tmp/cabal.tar.gz -C /tmp/cabal --strip-components 1",
+  "cd /tmp/cabal && runhaskell Setup.hs configure",
+  "cd /tmp/cabal && runhaskell Setup.hs build",
+  "cd /tmp/cabal && runhaskell Setup.hs install",
+  "which cabal"
+]
 
 [tool.tox]
 legacy_tox_ini = """

@@ -1,4 +1,4 @@
-name: ci
+name: cibuildwheel-windows
 
 on:
   push:
@@ -15,40 +15,18 @@ on:
     #        │ │ │ │ │
     #        │ │ │ │ │
     - cron: "0 0 * * 0"
-  
+
   workflow_dispatch:
 
 jobs:
   test:
-    name: ${{ matrix.os.name }} / GHC ${{ matrix.ghc.version }} / Python ${{ matrix.python.version }}
+    name: Build wheels for ${{ matrix.os.name }} / GHC ${{ matrix.ghc.version }} / Python ${{ matrix.python.version }}
     runs-on: ${{ matrix.os.tag }}
 
     strategy:
       fail-fast: false
       matrix:
         os:
-          # 01-04-2023:
-          # All GitHub-hosted runners use an x86_64 architecture. If this changes,
-          # the manylinux platform tags below must take this into account.
-          # 03-04-2023:
-          # We must specify an exact Ubuntu version, because each Ubuntu version
-          # corresponds to an exact libc version, which must be passed to auditwheel,
-          # as part of the manylinux tag:
-          # - ubuntu-20.04 uses libc 2.31
-          # - ubuntu-22.04 uses libc 2.35
-          # In general, libc is FORWARDS but NOT BACKWARDS compatible, e.g., binaries
-          # built against libc 2.31 can be run on a system with libc 2.35, but not the
-          # other way around. You can get the libc version via Python by running:
-          # ```python
-          # import platform
-          # print(platform.libc_ver())
-          # ```
-          - { tag: ubuntu-22.04, name: Linux, manylinux: manylinux_2_35_x86_64 }
-          # 01-04-2023:
-          # Ubuntu 20.04 has patchelf version 0.10, but the latest auditwheel
-          # requires at least version 0.14.
-          # - { tag: ubuntu-20.04, name: Linux, manylinux: manylinux_2_31_x86_64 }
-          - { tag: macos-latest, name: macOS }
           - { tag: windows-latest, name: Windows }
         ghc:
           - { version: "9.6.1" }
@@ -89,10 +67,16 @@ jobs:
           python -m pip install -r requirements-ci.txt
         shell: sh
 
-      - name: Build
-        run: python setup.py build_ext
+      - # 01-04-2023:
+        # Windows builds with cibuildwheel cannot find pythonXY.lib from the venv
+        name: Build wheel
+        run: |
+          mkdir -p wheelhouse
+          pipx run --spec build pyproject-build --wheel --outdir=wheelhouse
+          pipx run delvewheel repair --wheel-dir=wheelhouse wheelhouse/*.whl
         shell: sh
 
-      - name: Test
-        run: pipx run tox run -e py${{ matrix.python.tag }}
-        shell: sh
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheelhouse-GHC-${{ matrix.ghc.version }}
+          path: ./wheelhouse/*.whl

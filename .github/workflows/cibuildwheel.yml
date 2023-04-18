@@ -1,0 +1,45 @@
+name: cibuildwheel
+
+on:
+  push:
+    branches:
+      - main
+
+  schedule:
+    #        ┌───────────── minute (0 - 59)
+    #        │ ┌───────────── hour (0 - 23)
+    #        │ │ ┌───────────── day of the month (1 - 31)
+    #        │ │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+    #        │ │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    #        │ │ │ │ │
+    - cron: "0 0 * * 0"
+
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Build wheels for ${{ matrix.os.name }}
+    runs-on: ${{ matrix.os.tag }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: { tag: ubuntu-latest, name: Linux }
+          - os: { tag: macos-latest, name: macOS }
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: pypa/cibuildwheel@v2.12.1
+        with:
+          package-dir: .
+          output-dir: wheelhouse
+          config-file: "{package}/pyproject.toml"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: wheelhouse-GHC-${{ matrix.ghc.version }}
+          path: ./wheelhouse/*.whl
