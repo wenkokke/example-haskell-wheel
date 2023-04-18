@@ -7,7 +7,7 @@ source /etc/os-release
 if [ "$ID" = "centos" ]
 then
     # NOTE: The CentOS build of GHC links against "libgmp.so"
-    ln -s /usr/lib64/libgmp.so.10 /usr/lib64/libgmp.so
+    cd /usr/lib64 && ln -s libgmp.so.10 libgmp.so
     
     # Install prerequisites
     yum install -y wget
