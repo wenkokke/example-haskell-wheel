@@ -10,6 +10,7 @@ from distutils.errors import (
     DistutilsSetupError,
 )
 from distutils.spawn import find_executable
+from find_libpython import find_libpython
 
 ext_modules = [
     Extension(
@@ -24,7 +25,11 @@ class cabal_build_ext(build_ext):
         super().finalize_options()
 
         if sys.platform in ["win32", "cygwin"]:
-            self.libraries.append("python%d%d" % sys.version_info[:2])
+            library_dir, library = os.path.split(find_libpython())
+            libname, _libext = os.path.splitext(library)
+            libname = libname[3:] if libname.startswith("lib") else libname
+            self.libraries.append(libname)
+            self.library_dirs.append(library_dir)
 
     def build_extension(self, ext: Extension):
         # Taken from setuptools:
