@@ -27,7 +27,7 @@ test-command = "pytest {package}/tests"
 test-extras = "test"
 
 [tool.cibuildwheel.linux]
-before-all = "{package}/scripts/before-all-linux.sh"
+before-all = "source /etc/os-release && {package}/scripts/before-all-$ID.sh"
 
 [tool.tox]
 legacy_tox_ini = """
