@@ -32,8 +32,9 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - { tag: ubuntu-latest, name: Linux }
           - { tag: macos-latest, name: macOS }
+          - { tag: ubuntu-latest, name: Linux }
+          - { tag: windows-latest, name: Windows }
         ghc:
           - { version: "9.4.4" }
         cabal:
