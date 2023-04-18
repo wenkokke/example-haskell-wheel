@@ -22,7 +22,7 @@ example-haskell-wheel = "example_haskell_wheel:main"
 # Cross-compilation does not work with GHC and Cabal.
 archs = ["native"]
 build-frontend = "build"
-skip = ["pp*", "*musllinux*"]
+skip = ["pp*"]
 test-command = "pytest {package}/tests"
 test-extras = "test"
 
