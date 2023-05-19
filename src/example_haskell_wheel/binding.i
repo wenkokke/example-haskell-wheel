@@ -1,19 +1,21 @@
 %module binding
 %{
-#include "Fib_stub.h"
+#include "ExampleHaskellWheel/Binding_stub.h"
 
-extern HsInt32 hs_fib(HsInt32 n);
+char * unsafe_hs_example_haskell_wheel_version() {
+  return hs_example_haskell_wheel_version();
+}
 
-extern void hs_defaultMain(HsInt32 argc, HsPtr argv);
+void unsafe_hs_example_haskell_wheel_main() {
+  hs_example_haskell_wheel_main();
+}
 
-void hs_rts_init(int argc, char **argv)
-{
+void unsafe_hs_init(int argc, char **argv) {
   hs_init(&argc, &argv);
 }
 
-void hs_rts_exit()
-{
-  void hs_exit();
+void unsafe_hs_exit() {
+  hs_exit();
 }
 %}
 
@@ -43,7 +45,7 @@ void hs_rts_exit()
   free((char *) $2);
 }
 
-int hs_fib(int n);
-void hs_defaultMain(int argc, char **argv);
-void hs_rts_init(int argc, char **argv);
-void hs_rts_exit();
+char * unsafe_hs_example_haskell_wheel_version();
+void unsafe_hs_example_haskell_wheel_main();
+void unsafe_hs_init(int argc, char **argv);
+void unsafe_hs_exit();

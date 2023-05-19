@@ -1,14 +1,30 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module Fib where
+module ExampleHaskellWheel.Binding where
 
 import Control.Monad (forM_)
-import Foreign.Ptr (Ptr)
-import Foreign.C.Types (CInt (..))
-import Foreign.C.String (CString, peekCString)
-import Foreign.Marshal.Array (peekArray)
+import Data.Version (showVersion)
+import Foreign.C.String (CString, newCString)
+import Paths_example_haskell_wheel (version)
+import System.Environment (getArgs)
 import Text.Read (readMaybe)
+
+foreign export ccall hs_example_haskell_wheel_version :: IO CString
+
+hs_example_haskell_wheel_version :: IO CString
+hs_example_haskell_wheel_version =
+  newCString (showVersion version)
+
+foreign export ccall hs_example_haskell_wheel_main :: IO ()
+
+hs_example_haskell_wheel_main :: IO ()
+hs_example_haskell_wheel_main =
+  getArgs >>= \args ->
+    forM_ args $ \arg -> do
+      case readMaybe arg of
+        Just n  -> putStrLn $ "fib " <> show n <> " -> " <> show (fib n)
+        Nothing -> putStrLn $ "fib " <> arg    <> " -> error"
 
 -- Taken from:
 -- https://wiki.haskell.org/The_Fibonacci_sequence#Fastest_Fib_in_the_West
@@ -31,23 +47,3 @@ fib n = snd . foldl fib_ (1, 0) . map (toEnum . fromIntegral) $ unfoldl divs n
 
     pow :: Int -> Int -> Int
     pow = (^)
-
-hs_fib :: CInt -> CInt
-hs_fib = fromIntegral . fib . fromIntegral
-
-foreign export ccall hs_fib :: CInt -> CInt
-
-defaultMain :: [String] -> IO ()
-defaultMain args =
-  forM_ args $ \arg ->
-    case readMaybe arg of
-      Just n  -> putStrLn $ "fib " <> show n <> " -> " <> show (fib n)
-      Nothing -> putStrLn $ "fib " <> arg    <> " -> error"
-
-hs_defaultMain :: CInt -> Ptr CString -> IO ()
-hs_defaultMain c_argc c_argv = do
-  let argc = fromIntegral c_argc
-  argv <- mapM peekCString =<< peekArray argc c_argv
-  defaultMain argv
-
-foreign export ccall hs_defaultMain :: CInt -> Ptr CString -> IO ()

@@ -1,26 +1,20 @@
 import os.path
 import sys
 import subprocess
-import typing
-import setuptools
-import setuptools.command.build_ext
+import shutil
+from typing import Dict, List, Optional
 
-# 03-04-2023:
-# The imports from distutils must come AFTER the imports from setuptools,
-# because setuptools overrides the distutils modules with its own versions.
-# isort: split
+from setuptools import Extension, setup
+from setuptools.command.build_ext import build_ext
 
-import distutils.errors
-import distutils.spawn
-
-ext_module = setuptools.Extension(
+ext_module = Extension(
     name="example_haskell_wheel._binding",
     sources=["src/example_haskell_wheel/binding.i"],
 )
 
 
-class cabal_build_ext(setuptools.command.build_ext.build_ext):
-    def finalize_options(self):
+class cabal_build_ext(build_ext):
+    def finalize_options(self) -> None:
         super().finalize_options()
 
         if sys.platform in ["win32", "cygwin"]:
@@ -32,16 +26,17 @@ class cabal_build_ext(setuptools.command.build_ext.build_ext):
             self.libraries.append(libname)
             self.library_dirs.append(library_dir)
 
-    def build_extension(self, ext: setuptools.Extension):
+    def build_extension(self, ext: Extension) -> None:
         # Taken from setuptools:
         # https://github.com/pypa/setuptools/blob/245d72a8aa4d47e1811425213aba2a06a0bb64fa/setuptools/command/build_ext.py#L240-L241
-        ext._convert_pyx_sources_to_lang()
+        if hasattr(ext, "_convert_pyx_sources_to_lang"):
+            ext._convert_pyx_sources_to_lang()
 
         # Taken from distutils:
         # https://github.com/pypa/distutils/blob/4435cec31b8eb5712aa8bf993bea3f07051c24d8/distutils/command/build_ext.py#L504-L513
         sources = ext.sources
         if sources is None or not isinstance(sources, (list, tuple)):
-            raise distutils.errors.DistutilsSetupError(
+            raise ValueError(
                 "in 'ext_modules' option (extension '%s'), "
                 "'sources' must be present and must be "
                 "a list of source filenames" % ext.name
@@ -52,7 +47,7 @@ class cabal_build_ext(setuptools.command.build_ext.build_ext):
         # First, scan the sources for SWIG definition files (.i), run
         # SWIG on 'em to create .c files, and modify the sources list
         # accordingly.
-        sources = self.swig_sources(sources, ext)
+        sources = self.swig_sources(sources, ext)  # type: ignore[no-untyped-call]
 
         # Next, build the sources with Cabal.
         # NOTE: This requires a valid .cabal file that defines a foreign library called _binding.
@@ -62,11 +57,13 @@ class cabal_build_ext(setuptools.command.build_ext.build_ext):
 
         # Taken from setuptools:
         # https://github.com/pypa/setuptools/blob/245d72a8aa4d47e1811425213aba2a06a0bb64fa/setuptools/command/build_ext.py#L247-L249
-        if ext._needs_stub:
-            build_lib = self.get_finalized_command("build_py").build_lib
-            self.write_stub(build_lib, ext)
+        if hasattr(ext, "_needs_stub"):
+            command = self.get_finalized_command("build_py")
+            if hasattr(command, "build_lib"):
+                build_lib = command.build_lib
+                self.write_stub(build_lib, ext)
 
-    def cabal_configure_ext(self, ext: setuptools.Extension):
+    def cabal_configure_ext(self, ext: Extension) -> None:
         library_dirs = [*(self.library_dirs or []), *(ext.library_dirs or [])]
         include_dirs = [*(self.include_dirs or []), *(ext.include_dirs or [])]
         libraries = [*(self.libraries or []), *(ext.libraries or [])]
@@ -83,7 +80,7 @@ class cabal_build_ext(setuptools.command.build_ext.build_ext):
             ]
         )
 
-    def cabal_build_ext(self, ext: setuptools.Extension):
+    def cabal_build_ext(self, ext: Extension) -> None:
         self.mkpath(self.build_temp)
         self.cabal(["build"], env={"INSTALLDIR": self.build_temp, **os.environ})
         lib_filename = self.get_cabal_foreign_library_filename(ext)
@@ -91,11 +88,9 @@ class cabal_build_ext(setuptools.command.build_ext.build_ext):
         self.mkpath(os.path.dirname(ext_fullpath))
         self.copy_file(os.path.join(self.build_temp, lib_filename), ext_fullpath)
 
-    def get_cabal_foreign_library_filename(self, ext):
+    def get_cabal_foreign_library_filename(self, ext: Extension) -> str:
         if sys.platform not in ["darwin", "linux", "win32", "cygwin"]:
-            raise distutils.errors.DistutilsPlatformError(
-                f"unsupported platform {self.plat_name}"
-            )
+            raise NotImplementedError(f"unsupported platform {self.plat_name}")
         library_prefix = "" if sys.platform in ["win32", "cygwin"] else "lib"
         component_name = ext.name.split(".")[-1]
         dynlib_extension = {
@@ -106,30 +101,31 @@ class cabal_build_ext(setuptools.command.build_ext.build_ext):
         }[sys.platform]
         return f"{library_prefix}{component_name}{os.path.extsep}{dynlib_extension}"
 
-    def cabal(self, args, *, env=None):
+    def cabal(
+        self,
+        args: List[str],
+        *,
+        env: Optional[Dict[str, str]] = None,
+    ) -> None:
         args = [self.find_cabal(), *args]
         cmd = " ".join(args)
         print(cmd)
         exitCode = subprocess.call(args, env=env)
         if exitCode != 0:
-            raise distutils.errors.DistutilsExecError(
-                f"error occurred when running '{cmd}'"
-            )
+            raise OSError(f"error occurred when running '{cmd}'")
 
-    _cabal: typing.Optional[str] = None
+    _cabal: Optional[str] = None
 
-    def find_cabal(self):
+    def find_cabal(self) -> str:
         if self._cabal is None:
-            self._cabal = distutils.spawn.find_executable("cabal")
+            self._cabal = shutil.which("cabal")
             if self._cabal is None:
-                raise distutils.errors.DistutilsExecError(
-                    "could not find executable 'cabal'"
-                )
+                raise OSError("could not find executable 'cabal'")
         return self._cabal
 
 
-def main():
-    setuptools.setup(
+def main() -> None:
+    setup(
         ext_modules=[ext_module],
         cmdclass={"build_ext": cabal_build_ext},
     )

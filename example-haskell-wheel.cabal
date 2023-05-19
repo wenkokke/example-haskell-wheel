@@ -1,6 +1,6 @@
 cabal-version:   3.0
 name:            example-haskell-wheel
-version:         0.1.0
+version:         1.0.0
 description:
   An experiment in publishing a Haskell library as a Python Wheel.
 
@@ -14,10 +14,10 @@ extra-doc-files: CHANGELOG.md
 
 custom-setup
   setup-depends:
-    , base
-    , Cabal
-    , filepath
-    , directory
+    , base       >=4
+    , Cabal      >=2.0.0.2
+    , directory  >=1
+    , filepath   >=1
 
 common warnings
   ghc-options: -Wall
@@ -37,6 +37,9 @@ foreign-library _binding
 
   c-sources:        src/example_haskell_wheel/binding_wrap.c
   hs-source-dirs:   src
-  other-modules:    Fib
+  other-modules:
+    ExampleHaskellWheel.Binding
+    Paths_example_haskell_wheel
+
   build-depends:    base >=4.7 && <5
   default-language: Haskell2010

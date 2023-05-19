@@ -1,25 +1,44 @@
 [build-system]
 requires = [
-  "find_libpython>=0.3; sys_platform == 'win32'",
-  "setuptools>=45",
-  "swig>=4"
+  "find_libpython >=0.3,<0.4; sys_platform == 'win32'",
+  "setuptools >=45",
+  "swig >=4,<5"
 ]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = 'example-haskell-wheel'
-version = '0.1.0a5'
-authors = [{ name = 'Wen Kokke', email = 'wenkokke@users.noreply.github.com' }]
-description = 'An experiment in publishing a Haskell library as a Python Wheel.'
-readme = 'README.md'
-license = { file = 'LICENSE' }
-requires-python = ">=3.7,<3.12"
+name = "example-haskell-wheel"
+version = "1.0.0"
+authors = [{ name = "Wen Kokke", email = "wenkokke@users.noreply.github.com" }]
+description = "An experiment in publishing a Haskell library as a Python Wheel."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.7.1,<3.12"
 
 [project.optional-dependencies]
+mypy = ["types_setuptools >=45"]
 test = ["pytest >=7.1,<8"]
 
 [project.scripts]
-example-haskell-wheel = "example_haskell_wheel:main"
+example-haskell-wheel = "example_haskell_wheel.__main__:main"
+
+[tool.bumpver]
+current_version = "v1.0.0"
+version_pattern = "vMAJOR.MINOR.PATCH[-TAG]"
+commit_message = "Bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+  '^version = "{pep440_version}"$',
+  '^current_version = "{version}"$',
+]
+"src/example_haskell_wheel/__init__.py" = [
+  '^VERSION: str = "{pep440_version}"$',
+]
+"example-haskell-wheel.cabal" = ['^version:         {pep440_version}$']
 
 [tool.cibuildwheel]
 # 18-04-2023:
@@ -40,16 +59,32 @@ test-extras = "test"
 [tool.cibuildwheel.linux]
 before-all = "source /etc/os-release && {package}/scripts/before-all-$ID.sh"
 
+[tool.mypy]
+mypy_path = "src"
+python_version = 3.7
+strict = true
+implicit_reexport = false
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.tox]
 legacy_tox_ini = """
 [tox]
 envlist = py37, py38, py39, py310, py311
 isolated_build = true
-skip_missing_interpreters = true
 
 [testenv]
+allowlist_externals =
+  bash
+  diff
 extras =
   test
 commands =
-  {envpython} -m pytest tests
+  {envpython} -m pytest tests/
+  bash -c 'diff <(example-haskell-wheel 11) <(echo "fib 11 -> 89")'
+  bash -c 'diff <(example-haskell-wheel 23) <(echo "fib 23 -> 28657")'
+  bash -c 'diff <(example-haskell-wheel 35) <(echo "fib 35 -> 9227465")'
+  bash -c 'diff <(example-haskell-wheel 47) <(echo "fib 47 -> 2971215073")'
+  bash -c 'diff <(example-haskell-wheel 59) <(echo "fib 59 -> 956722026041")'
 """

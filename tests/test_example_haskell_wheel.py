@@ -1,6 +1,4 @@
-def test_fib():
-    from example_haskell_wheel import fib
+def test_example_haskell_wheel_version() -> None:
+    import example_haskell_wheel
 
-    assert fib(1) == 1
-    assert fib(5) == 5
-    assert fib(42) == 267914296
+    assert example_haskell_wheel.version() == example_haskell_wheel.VERSION

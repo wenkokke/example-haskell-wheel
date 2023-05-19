@@ -1,20 +1,26 @@
-from example_haskell_wheel._binding import (
-    hs_fib,
-    hs_defaultMain,
-    hs_rts_init,
-    hs_rts_exit,
+from typing import List
+
+from ._binding import (
+    unsafe_hs_example_haskell_wheel_version,
+    unsafe_hs_example_haskell_wheel_main,
+    unsafe_hs_init,
+    unsafe_hs_exit,
 )
 
-
-def fib(n: int) -> int:
-    hs_rts_init(["example-haskell-wheel"])
-    r = hs_fib(n)
-    hs_rts_exit()
-    return r
+VERSION: str = "1.0.0"
 
 
-def main():
-    print("Let's ask Haskell to compute some Fibonacci numbers:")
-    hs_rts_init(["example-haskell-wheel"])
-    hs_defaultMain(["1", "5", "42", "book"])
-    hs_rts_exit()
+def version() -> str:
+    try:
+        unsafe_hs_init([])
+        return str(unsafe_hs_example_haskell_wheel_version())
+    finally:
+        unsafe_hs_exit()
+
+
+def main(args: List[str]) -> None:
+    try:
+        unsafe_hs_init(args)
+        unsafe_hs_example_haskell_wheel_main()
+    finally:
+        unsafe_hs_exit()
