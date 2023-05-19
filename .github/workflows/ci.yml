@@ -67,6 +67,16 @@ jobs:
       - # Required to run job via act: https://github.com/nektos/act
         run: pip install -r "./requirements-ci.txt"
 
+      - # 19-05-2023:
+        # Required to build the wheels on macOS and Windows, but not on Linux,
+        # as Linux builds are run in containers, where GHC and Cabal are built
+        # by the `./scripts/before-all.sh` scripts.
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        uses: haskell/actions/setup@v2
+        with:
+          ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
+          cabal-version: ${{ env.DEFAULT_CABAL_VERSION }}
+
       - uses: pypa/cibuildwheel@v2.12.3
         with:
           output-dir: "dist"
@@ -109,6 +119,16 @@ jobs:
 
       - # Required to run job via act: https://github.com/nektos/act
         run: pip install -r "./requirements-ci.txt"
+
+      - # 19-05-2023:
+        # Required to build the wheels on macOS and Windows, but not on Linux,
+        # as Linux builds are run in containers, where GHC and Cabal are built
+        # by the `./scripts/before-all.sh` scripts.
+        if: runner.os == 'macOS' || runner.os == 'Windows'
+        uses: haskell/actions/setup@v2
+        with:
+          ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
+          cabal-version: ${{ env.DEFAULT_CABAL_VERSION }}
 
       - run: pipx run tox
 
