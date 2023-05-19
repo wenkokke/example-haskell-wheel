@@ -7,5 +7,8 @@ def test_example_haskell_wheel_main() -> None:
     import example_haskell_wheel
     import subprocess
     
-    output = subprocess.check_output(["example-haskell-wheel", "11"]).strip()
-    assert output == "fib 11 -> 89"
+    def test_fib(input: int, result: int) -> None:
+        output = subprocess.check_output(["example-haskell-wheel", f"{input}"]).decode("utf-8").strip()
+        assert output == f"fib {input} -> {result}"
+
+    test_fin(11, 89)
