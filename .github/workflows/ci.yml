@@ -79,15 +79,15 @@ jobs:
 
       - uses: pypa/cibuildwheel@v2.12.3
         with:
-          output-dir: "dist"
+          output-dir: "./dist"
           config-file: "{package}/pyproject.toml"
         env:
           MACOSX_DEPLOYMENT_TARGET: "10.10"
 
       - uses: actions/upload-artifact@v3
         with:
-          name: dist
-          path: ./dist/*.whl
+          name: "dist"
+          path: "./dist/*.whl"
 
   ################################################################################
   # Test package with Tox
@@ -154,13 +154,13 @@ jobs:
       - name: Download dist
         uses: actions/download-artifact@v3
         with:
-          name: dist
-          path: dist
+          name: "dist"
+          path: "./dist"
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: "dist/*.whl"
+          files: "./dist/*.whl"
           fail_on_unmatched_files: true
 
   ################################################################################
@@ -184,10 +184,10 @@ jobs:
       - name: Download dist
         uses: actions/download-artifact@v3
         with:
-          name: dist
-          path: dist
+          name: "dist"
+          path: "./dist"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: dist
+          packages-dir: "./dist"
