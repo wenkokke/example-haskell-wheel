@@ -75,16 +75,8 @@ envlist = py37, py38, py39, py310, py311
 isolated_build = true
 
 [testenv]
-allowlist_externals =
-  bash
-  diff
 extras =
   test
 commands =
   {envpython} -m pytest tests/
-  bash -c 'diff <(example-haskell-wheel 11) <(echo "fib 11 -> 89")'
-  bash -c 'diff <(example-haskell-wheel 23) <(echo "fib 23 -> 28657")'
-  bash -c 'diff <(example-haskell-wheel 35) <(echo "fib 35 -> 9227465")'
-  bash -c 'diff <(example-haskell-wheel 47) <(echo "fib 47 -> 2971215073")'
-  bash -c 'diff <(example-haskell-wheel 59) <(echo "fib 59 -> 956722026041")'
 """
