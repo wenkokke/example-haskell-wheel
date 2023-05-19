@@ -3,9 +3,9 @@ name: CI
 on:
   push:
     branches:
-      - dev
+      - main
     tags:
-      - "*"
+      - "v*"
   pull_request:
     types:
       - opened
