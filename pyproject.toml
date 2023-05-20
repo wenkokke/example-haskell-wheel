@@ -20,7 +20,7 @@ mypy = ["types_setuptools >=45"]
 test = ["pytest >=7.1,<8"]
 
 [project.scripts]
-example-haskell-wheel = "example_haskell_wheel.__main__:main"
+"example-haskell-wheel" = "example_haskell_wheel.__main__:main"
 
 [tool.bumpver]
 current_version = "v1.0.0"
