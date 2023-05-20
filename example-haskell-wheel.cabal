@@ -1,6 +1,6 @@
 cabal-version:   3.0
 name:            example-haskell-wheel
-version:         1.0.0
+version:         1.0.1
 description:
   An experiment in publishing a Haskell library as a Python Wheel.
 

@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "example-haskell-wheel"
-version = "1.0.0"
+version = "1.0.1"
 authors = [{ name = "Wen Kokke", email = "wenkokke@users.noreply.github.com" }]
 description = "An experiment in publishing a Haskell library as a Python Wheel."
 readme = "README.md"
@@ -23,7 +23,7 @@ test = ["pytest >=7.1,<8"]
 "example-haskell-wheel" = "example_haskell_wheel.__main__:main"
 
 [tool.bumpver]
-current_version = "v1.0.0"
+current_version = "v1.0.1"
 version_pattern = "vMAJOR.MINOR.PATCH[-TAG]"
 commit_message = "Bump version {old_version} -> {new_version}"
 commit = true

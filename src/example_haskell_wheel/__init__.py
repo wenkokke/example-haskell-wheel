@@ -7,7 +7,7 @@ from ._binding import (
     unsafe_hs_exit,
 )
 
-VERSION: str = "1.0.0"
+VERSION: str = "1.0.1"
 
 
 def version() -> str:
