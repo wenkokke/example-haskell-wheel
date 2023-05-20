@@ -1,8 +1,6 @@
 # Specific to this project
 /src/example_haskell_wheel/binding.py
 /src/example_haskell_wheel/binding_wrap.c
-/wheelhouse
-/wheelhouselocal
 
 # Haskell
 dist
