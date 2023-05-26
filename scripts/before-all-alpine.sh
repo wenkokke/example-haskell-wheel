@@ -18,6 +18,6 @@ cd "/tmp/ghc" && make install
 # Install Cabal
 wget "${CABAL_RELEASE_URL}" -O "/tmp/cabal.zip"
 unzip -q "/tmp/cabal.zip" -d "/tmp" && mv "/tmp/cabal-cabal-install-v${CABAL_VERSION}" "/tmp/cabal"
-cd "/tmp/cabal" && python3 ./bootstrap/bootstrap.py -d ./bootstrap/linux-${GHC_VERSION}.json -w "/usr/local/bin/ghc-${GHC_VERSION}"
+cd "/tmp/cabal" && python3 "./bootstrap/bootstrap.py" -d "./bootstrap/linux-${GHC_VERSION}.json" -w "/usr/local/bin/ghc-${GHC_VERSION}"
 cd "/tmp/cabal/cabal-install" && "/tmp/cabal/_build/bin/cabal" v2-update
 cd "/tmp/cabal/cabal-install" && "/tmp/cabal/_build/bin/cabal" v2-install cabal-install --overwrite-policy=always --install-method=copy --installdir="/usr/local/bin"
