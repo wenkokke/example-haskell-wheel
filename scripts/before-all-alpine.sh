@@ -2,6 +2,7 @@
 
 # Install prerequisites
 apk add gmp-dev
+apk add ncurses-dev
 
 # GHC bootstrap version and release URL
 GHC_BOOTSTRAP_VERSION="9.0.2"
