@@ -49,9 +49,6 @@ skip = [
   # 18-04-2023:
   # PyPy builds do not work.
   "pp*",
-  # 18-04-2023:
-  # GHC distributions for Alpine Linux do not include dynamic builds for libraries.
-  "*musllinux*"
 ]
 test-command = "pytest {package}/tests"
 test-extras = "test"
