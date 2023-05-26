@@ -49,10 +49,16 @@ jobs:
         os:
           - name: "Linux"
             type: "ubuntu-latest"
+            plat: "*-manylinux*"
+          - name: "Linux"
+            type: "ubuntu-latest"
+            plat: "*-musllinux*"
           - name: "macOS"
             type: "macos-latest"
+            plat: "*"
           - name: "Windows"
             type: "windows-latest"
+            plat: "*"
 
     steps:
       - uses: actions/checkout@v3
@@ -82,6 +88,7 @@ jobs:
           output-dir: "./dist"
           config-file: "{package}/pyproject.toml"
         env:
+          CIBW_BUILD: "${{ matrix.os.plat }}"
           MACOSX_DEPLOYMENT_TARGET: "10.10"
 
       - uses: actions/upload-artifact@v3
