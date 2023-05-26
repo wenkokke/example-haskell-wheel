@@ -1,18 +1,15 @@
 #!/bin/sh
 
-# GHC version and release URL
-GHC_VERSION="9.4.4"
-GHC_RELEASE_URL="https://downloads.haskell.org/~ghc/${GHC_VERSION}/ghc-${GHC_VERSION}-x86_64-centos7-linux.tar.xz"
-
-# Cabal version and release URL
-CABAL_VERSION="3.10.1.0"
-CABAL_RELEASE_URL="https://github.com/haskell/cabal/archive/refs/tags/cabal-install-v${CABAL_VERSION}.zip"
+# Install prerequisites
+yum install -y wget
 
 # NOTE: The CentOS build of GHC links against "libgmp.so"
 cd "/usr/lib64" && ln -s "libgmp.so.10" "libgmp.so"
 
-# Install prerequisites
-yum install -y wget
+
+# GHC version and release URL
+GHC_VERSION="9.4.4"
+GHC_RELEASE_URL="https://downloads.haskell.org/~ghc/${GHC_VERSION}/ghc-${GHC_VERSION}-x86_64-centos7-linux.tar.xz"
 
 # Install GHC
 wget -q "${GHC_RELEASE_URL}" -O "/tmp/ghc.tar.xz"
@@ -20,6 +17,11 @@ mkdir "/tmp/ghc"
 tar xf "/tmp/ghc.tar.xz" -C "/tmp/ghc" --strip-components 1
 cd "/tmp/ghc" && ./configure
 cd "/tmp/ghc" && make install
+
+
+# Cabal version and release URL
+CABAL_VERSION="3.10.1.0"
+CABAL_RELEASE_URL="https://github.com/haskell/cabal/archive/refs/tags/cabal-install-v${CABAL_VERSION}.zip"
 
 # Install Cabal
 wget "${CABAL_RELEASE_URL}" -O "/tmp/cabal.zip"
