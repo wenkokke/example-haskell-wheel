@@ -77,7 +77,7 @@ jobs:
           ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
           cabal-version: ${{ env.DEFAULT_CABAL_VERSION }}
 
-      - uses: pypa/cibuildwheel@v2.12.3
+      - uses: pypa/cibuildwheel@v2.13.0
         with:
           output-dir: "./dist"
           config-file: "{package}/pyproject.toml"
