@@ -1,14 +1,16 @@
 #!/bin/bash
 
 # Install prerequisites
+python3 -m pip install wget
+
+# Install prerequisites
 apk add gmp-dev
 
 # GHC bootstrap version and release URL
-GHC_BOOTSTRAP_VERSION="9.0.2"
-GHC_BOOTSTRAP_RELEASE_URL="https://downloads.haskell.org/~ghc/${GHC_BOOTSTRAP_VERSION}/ghc-${GHC_BOOTSTRAP_VERSION}-x86_64-alpine3.12-linux-gmp.tar.xz"
+GHC_BOOTSTRAP_RELEASE_URL="https://downloads.haskell.org/~ghc/9.0.2/ghc-9.0.2-x86_64-alpine3.12-linux-gmp.tar.xz"
 
 # Install Bootstrap GHC
-wget -q "${GHC_BOOTSTRAP_RELEASE_URL}" -O "/tmp/ghc-bootstrap.tar.xz"
+python3 -c "import wget; wget.download('${GHC_BOOTSTRAP_RELEASE_URL}', '/tmp/ghc-bootstrap.tar.xz')"
 mkdir "/tmp/ghc-bootstrap"
 tar xf "/tmp/ghc-bootstrap.tar.xz" -C "/tmp/ghc-bootstrap" --strip-components 1
 cd "/tmp/ghc-bootstrap" && ./configure
@@ -16,20 +18,18 @@ cd "/tmp/ghc-bootstrap" && make install
 
 
 # Cabal version and release URL
-CABAL_VERSION="3.10.1.0"
-CABAL_RELEASE_URL="https://github.com/haskell/cabal/archive/refs/tags/cabal-install-v${CABAL_VERSION}.zip"
+CABAL_RELEASE_URL="https://github.com/haskell/cabal/archive/refs/tags/cabal-install-v3.10.1.0.zip"
 
 # Install Cabal
-wget "${CABAL_RELEASE_URL}" -O "/tmp/cabal.zip"
-unzip -q "/tmp/cabal.zip" -d "/tmp" && mv "/tmp/cabal-cabal-install-v${CABAL_VERSION}" "/tmp/cabal"
-cd "/tmp/cabal" && python3 "./bootstrap/bootstrap.py" -d "./bootstrap/linux-${GHC_BOOTSTRAP_VERSION}.json" -w "/usr/local/bin/ghc-${GHC_BOOTSTRAP_VERSION}"
+python3 -c "import wget; wget.download('${CABAL_RELEASE_URL}', '/tmp/cabal.zip')"
+unzip -q "/tmp/cabal.zip" -d "/tmp" && mv "/tmp/cabal-cabal-install-v3.10.1.0" "/tmp/cabal"
+cd "/tmp/cabal" && python3 "./bootstrap/bootstrap.py" -d "./bootstrap/linux-9.0.2.json" -w "/usr/local/bin/ghc-9.0.2"
 cd "/tmp/cabal/cabal-install" && /tmp/cabal/_build/bin/cabal v2-update
 cd "/tmp/cabal/cabal-install" && /tmp/cabal/_build/bin/cabal v2-install cabal-install --overwrite-policy=always --install-method=copy --installdir="/usr/local/bin"
 
 
 # GHC version and source URL
-GHC_VERSION="9.4.4"
-GHC_SOURCE_URL="https://downloads.haskell.org/~ghc/${GHC_VERSION}/ghc-${GHC_VERSION}-src.tar.xz"
+GHC_SOURCE_URL="https://downloads.haskell.org/~ghc/9.4.4/ghc-9.4.4-src.tar.xz"
 
 # Build GHC from source
 
@@ -38,7 +38,7 @@ GHC_SOURCE_URL="https://downloads.haskell.org/~ghc/${GHC_VERSION}/ghc-${GHC_VERS
 /usr/local/bin/cabal v2-install happy --overwrite-policy=always --install-method=copy --installdir="/usr/local/bin"
 
 ## Get GHC source
-wget -q "${GHC_SOURCE_URL}" -O "/tmp/ghc.tar.xz"
+python3 -c "import wget; wget.download('${GHC_SOURCE_URL}', '/tmp/ghc.tar.xz')"
 mkdir "/tmp/ghc"
 tar xf "/tmp/ghc.tar.xz" -C "/tmp/ghc" --strip-components 1
 
@@ -71,5 +71,5 @@ BuildFlavour = quick
 EOL
 
 ## Configure and build GHC
-cd "/tmp/ghc" && ./configure ALEX="/usr/local/bin/alex" GHC="/usr/local/bin/ghc-${GHC_BOOTSTRAP_VERSION}" HAPPY="/usr/local/bin/happy"
+cd "/tmp/ghc" && ./configure ALEX="/usr/local/bin/alex" GHC="/usr/local/bin/ghc-9.0.2" HAPPY="/usr/local/bin/happy"
 cd "/tmp/ghc" && make install

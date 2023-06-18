@@ -1,0 +1,25 @@
+# Build the container
+# docker build --tag manylinux2014_ghc945_x86_64 --file dockerfiles/Dockerfile.manylinux2014_ghc945_x86_64
+FROM quay.io/pypa/manylinux2014_x86_64
+
+# Link libgmp.so.10 to libgmp.so
+RUN cd "/usr/lib64" && ln -s "libgmp.so.10" "libgmp.so"
+
+# Install prerequisites
+RUN python3 -m pip install wget==3.2
+
+# Install GHC 9.4.5
+RUN python3 -c "import wget; wget.download('https://downloads.haskell.org/~ghc/9.4.5/ghc-9.4.5-x86_64-centos7-linux.tar.xz', '/tmp/ghc-9.4.5.tar.xz')"
+RUN python3 -c "import shutil; shutil.unpack_archive('/tmp/ghc-9.4.5.tar.xz', '/tmp')"
+RUN cd "/tmp/ghc-9.4.5" && ./configure --prefix="/usr/local"
+RUN cd "/tmp/ghc-9.4.5" && make install
+RUN rm -rf "/tmp/ghc-9.4.5" "/tmp/ghc-9.4.5.tar.xz"
+
+# Bootstrap Cabal 3.10.1.0
+RUN python3 -c "import wget; wget.download('https://github.com/haskell/cabal/archive/refs/tags/cabal-install-v3.10.1.0.zip', '/tmp/cabal.zip')"
+RUN python3 -c "import shutil; shutil.unpack_archive('/tmp/cabal.zip', '/tmp')"
+RUN mv "/tmp/cabal-cabal-install-v3.10.1.0" "/tmp/cabal"
+RUN cd "/tmp/cabal" && python3 "./bootstrap/bootstrap.py" -d "./bootstrap/linux-9.4.5.json" -w "/usr/local/bin/ghc-9.4.5"
+RUN "/tmp/cabal/_build/bin/cabal" v2-update
+RUN "/tmp/cabal/_build/bin/cabal" v2-install cabal-install cabal-install --overwrite-policy=always --install-method=copy --installdir="/usr/local/bin"
+RUN rm -rf "/tmp/cabal" "/tmp/cabal.zip"

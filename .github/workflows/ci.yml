@@ -41,7 +41,7 @@ jobs:
   ################################################################################
 
   build:
-    name: "Build / ${{ matrix.os.name }}"
+    name: "Build / ${{ matrix.os.name }} - ${{ matrix.os.arch }}"
     runs-on: ${{ matrix.os.type }}
 
     strategy:
@@ -49,10 +49,13 @@ jobs:
         os:
           - name: "Linux"
             type: "ubuntu-latest"
+            arch: "x86_64"
           - name: "macOS"
             type: "macos-latest"
+            arch: "x86_64"
           - name: "Windows"
             type: "windows-latest"
+            arch: "AMD64"
 
     steps:
       - uses: actions/checkout@v3
@@ -71,7 +74,7 @@ jobs:
         # Required to build the wheels on macOS and Windows, but not on Linux,
         # as Linux builds are run in containers, where GHC and Cabal are built
         # by the `./scripts/before-all.sh` scripts.
-        if: runner.os == 'macOS' || runner.os == 'Windows'
+        if: matrix.os.name == 'macOS' || matrix.os.name == 'Windows'
         uses: haskell/actions/setup@v2
         with:
           ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
@@ -82,6 +85,7 @@ jobs:
           output-dir: "./dist"
           config-file: "{package}/pyproject.toml"
         env:
+          CIBW_ARCHS: "${{ matrix.os.arch }}"
           MACOSX_DEPLOYMENT_TARGET: "10.10"
 
       - uses: actions/upload-artifact@v3
@@ -129,7 +133,7 @@ jobs:
         # Required to build the wheels on macOS and Windows, but not on Linux,
         # as Linux builds are run in containers, where GHC and Cabal are built
         # by the `./scripts/before-all.sh` scripts.
-        if: runner.os == 'macOS' || runner.os == 'Windows'
+        if: matrix.os.name == 'macOS' || matrix.os.name == 'Windows'
         uses: haskell/actions/setup@v2
         with:
           ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
