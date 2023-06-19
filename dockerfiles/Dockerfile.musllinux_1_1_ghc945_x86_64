@@ -49,6 +49,7 @@ Index: ghc-9.4.5/compiler/GHC/Driver/Session.hs
      (OSOpenBSD, ArchX86_64)  -> [Opt_PIC] -- Due to PIE support in
 EOP
 (cd "/tmp" && patch -p0 < "/tmp/ghc-9.4.5-patches/fpic-default.patch")
+rm -rf "/tmp/ghc-9.4.5-patches"
 
 ## Create and update mk/build.mk
 cp "/tmp/ghc-9.4.5/mk/build.mk.sample" "/tmp/ghc-9.4.5/mk/build.mk"
