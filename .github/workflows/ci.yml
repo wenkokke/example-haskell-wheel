@@ -49,6 +49,12 @@ jobs:
         os:
           - name: "Linux"
             type: "ubuntu-latest"
+            arch: "aarch64"
+          - name: "Linux"
+            type: "ubuntu-latest"
+            arch: "i686"
+          - name: "Linux"
+            type: "ubuntu-latest"
             arch: "x86_64"
           - name: "macOS"
             type: "macos-latest"
@@ -79,6 +85,22 @@ jobs:
         with:
           ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
           cabal-version: ${{ env.DEFAULT_CABAL_VERSION }}
+
+      - # 19-06-2023:
+        # Required to build aarch64 wheels.
+        if: matrix.os.arch == 'aarch64'
+        name: Set up QEMU (linux/aarch64)
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "arm64"
+
+      - # 19-06-2023:
+        # Required to build i686 wheels.
+        if: matrix.os.arch == 'i686'
+        name: Set up QEMU (linux/i686)
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "386"
 
       - uses: pypa/cibuildwheel@v2.13.1
         with:
