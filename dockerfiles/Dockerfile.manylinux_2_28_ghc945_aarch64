@@ -1,9 +1,9 @@
 # Build the container
-# docker build --tag wenkokke/manylinux_2_28_ghc945_aarch64 --file dockerfiles/Dockerfile.manylinux_2_28_ghc945_aarch64
+# docker build --tag wenkokke/manylinux_2_28_ghc945_aarch64 --file dockerfiles/Dockerfile.manylinux_2_28_ghc945_aarch64 .
 FROM quay.io/pypa/manylinux_2_28_aarch64
 
 # Link python3.11 to python3
-RUN cd "//bin" && ln -s "python3.11" "python3"
+RUN cd "/usr/local/bin" && ln -s "python3.11" "python3"
 
 # Link libgmp.so.10 to libgmp.so
 RUN cd "/usr/lib64" && ln -s "libgmp.so.10" "libgmp.so"
