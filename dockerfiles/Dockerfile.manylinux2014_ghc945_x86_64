@@ -1,5 +1,5 @@
 # Build the container
-# docker build --tag manylinux2014_ghc945_x86_64 --file dockerfiles/Dockerfile.manylinux2014_ghc945_x86_64
+# docker build --tag wenkokke/manylinux2014_ghc945_x86_64 --file dockerfiles/Dockerfile.manylinux2014_ghc945_x86_64
 FROM quay.io/pypa/manylinux2014_x86_64
 
 # Link libgmp.so.10 to libgmp.so
