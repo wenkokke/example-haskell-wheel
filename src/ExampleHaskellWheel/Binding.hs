@@ -28,22 +28,22 @@ hs_example_haskell_wheel_main =
 
 -- Taken from:
 -- https://wiki.haskell.org/The_Fibonacci_sequence#Fastest_Fib_in_the_West
-fib :: Int -> Int
+fib :: Integer -> Integer
 fib n = snd . foldl fib_ (1, 0) . map (toEnum . fromIntegral) $ unfoldl divs n
   where
-    unfoldl :: (Int -> Maybe (Int, Int)) -> Int -> [Int]
+    unfoldl :: (Integer -> Maybe (Integer, Integer)) -> Integer -> [Integer]
     unfoldl f x = case f x of
       Nothing -> []
       Just (u, v) -> unfoldl f v ++ [u]
 
-    divs :: Int -> Maybe (Int, Int)
+    divs :: Integer -> Maybe (Integer, Integer)
     divs 0 = Nothing
     divs k = Just (uncurry (flip (,)) (k `divMod` 2))
 
-    fib_ :: (Int, Int) -> Bool -> (Int, Int)
+    fib_ :: (Integer, Integer) -> Bool -> (Integer, Integer)
     fib_ (f, g) p
       | p = (f * (f + 2 * g), f `pow` 2 + g `pow` 2)
       | otherwise = (f `pow` 2 + g `pow` 2, g * (2 * f - g))
 
-    pow :: Int -> Int -> Int
+    pow :: Integer -> Integer -> Integer
     pow = (^)
