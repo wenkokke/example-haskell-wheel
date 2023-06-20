@@ -49,9 +49,16 @@ skip = [
   # 18-04-2023:
   # PyPy builds do not work.
   "pp*",
-  # 18-04-2023:
-  # GHC distributions for Alpine Linux do not include dynamic builds for libraries.
-  "*musllinux*"
+  # 20-06-2023:
+  # GHC only provides x86_64 builds for musllinux.
+  "*-musllinux_i686",
+  "*-musllinux_aarch64",
+  "*-musllinux_ppc64le",
+  "*-musllinux_s390x",
+  # 20-06-2023:
+  # GHC does not provide ppc64le or s390x builds.
+  "*-manylinux_ppc64le",
+  "*-manylinux_s390x",
 ]
 test-command = "pytest {package}/tests"
 test-extras = "test"
