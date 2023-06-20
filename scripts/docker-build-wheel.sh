@@ -39,10 +39,4 @@ if [ -s "$fail" ]; then
 fi
 
 # Create a container for the build
-"${docker}" run --rm -v "${package_root}:/${package_name}" -w "/${package_name}" "${manylinux_image}" \
-/bin/sh -c '. /etc/os-release && sh ./scripts/before-all-$ID-$VERSION_ID.sh && pipx run tox'
-
-""
-""
-""
-""
+"${docker}" run --rm -v "${package_root}:/${package_name}" -w "/${package_name}" "${manylinux_image}" pipx run tox
