@@ -105,6 +105,7 @@ commands =
 deps =
   build
   auditwheel; sys_platform == 'linux'
+  delocate; sys_platform == 'darwin'
 set_env =
   env_python = {env_python}
   package_root = {package_root}
