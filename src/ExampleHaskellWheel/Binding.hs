@@ -3,11 +3,15 @@
 
 module ExampleHaskellWheel.Binding where
 
+import Control.Exception (Exception (..), SomeException (..), handle)
 import Control.Monad (forM_)
 import Data.Version (showVersion)
+import Foreign.C (CInt (..))
 import Foreign.C.String (CString, newCString)
 import Paths_example_haskell_wheel (version)
 import System.Environment (getArgs)
+import System.Exit (ExitCode (..))
+import System.IO (hPutStrLn, stderr)
 import Text.Read (readMaybe)
 
 foreign export ccall hs_example_haskell_wheel_version :: IO CString
@@ -16,15 +20,26 @@ hs_example_haskell_wheel_version :: IO CString
 hs_example_haskell_wheel_version =
   newCString (showVersion version)
 
-foreign export ccall hs_example_haskell_wheel_main :: IO ()
+foreign export ccall hs_example_haskell_wheel_main :: IO CInt
 
-hs_example_haskell_wheel_main :: IO ()
+exitHandler :: ExitCode -> IO CInt
+exitHandler ExitSuccess = return 0
+exitHandler (ExitFailure n) = return (fromIntegral n)
+
+uncaughtExceptionHandler :: SomeException -> IO CInt
+uncaughtExceptionHandler (SomeException e) =
+  hPutStrLn stderr (displayException e) >> return 1
+
+hs_example_haskell_wheel_main :: IO CInt
 hs_example_haskell_wheel_main =
-  getArgs >>= \args ->
-    forM_ args $ \arg -> do
-      case readMaybe arg of
-        Just n  -> putStrLn $ "fib " <> show n <> " -> " <> show (fib n)
-        Nothing -> putStrLn $ "fib " <> arg    <> " -> error"
+  handle uncaughtExceptionHandler $
+    handle exitHandler $ do
+      getArgs >>= \args ->
+        forM_ args $ \arg -> do
+          case readMaybe arg of
+            Just n -> putStrLn $ "fib " <> show n <> " -> " <> show (fib n)
+            Nothing -> putStrLn $ "fib " <> arg <> " -> error"
+      return 0
 
 -- Taken from:
 -- https://wiki.haskell.org/The_Fibonacci_sequence#Fastest_Fib_in_the_West

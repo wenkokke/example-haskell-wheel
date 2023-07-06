@@ -6,8 +6,8 @@ char * unsafe_hs_example_haskell_wheel_version() {
   return hs_example_haskell_wheel_version();
 }
 
-void unsafe_hs_example_haskell_wheel_main() {
-  hs_example_haskell_wheel_main();
+int unsafe_hs_example_haskell_wheel_main() {
+  return hs_example_haskell_wheel_main();
 }
 
 void unsafe_hs_init(int argc, char **argv) {
@@ -46,6 +46,6 @@ void unsafe_hs_exit() {
 }
 
 char * unsafe_hs_example_haskell_wheel_version();
-void unsafe_hs_example_haskell_wheel_main();
+int unsafe_hs_example_haskell_wheel_main();
 void unsafe_hs_init(int argc, char **argv);
 void unsafe_hs_exit();
