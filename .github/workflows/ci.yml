@@ -44,18 +44,27 @@ jobs:
           - name: "Linux"
             type: "ubuntu-latest"
             arch: "aarch64"
+            plat: "manylinux"
           - name: "Linux"
             type: "ubuntu-latest"
             arch: "i686"
+            plat: "manylinux"
           - name: "Linux"
             type: "ubuntu-latest"
             arch: "x86_64"
+            plat: "manylinux"
+          - name: "Linux"
+            type: "ubuntu-latest"
+            arch: "x86_64"
+            plat: "musllinux"
           - name: "macOS"
             type: "macos-latest"
             arch: "x86_64"
+            plat: "macosx"
           - name: "Windows"
             type: "windows-latest"
             arch: "AMD64"
+            plat: "win"
 
     steps:
       - uses: actions/checkout@v3
@@ -102,6 +111,7 @@ jobs:
           config-file: "{package}/pyproject.toml"
         env:
           CIBW_ARCHS: "${{ matrix.os.arch }}"
+          CIBW_BUILD: "*${{ matrix.os.plat }}*"
           MACOSX_DEPLOYMENT_TARGET: "10.10"
 
       - uses: actions/upload-artifact@v3
