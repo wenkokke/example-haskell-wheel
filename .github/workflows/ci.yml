@@ -107,7 +107,7 @@ jobs:
 
       - uses: pypa/cibuildwheel@v2.14.1
         with:
-          output-dir: "./dist"
+          output-dir: "./wheelhouse"
           config-file: "{package}/pyproject.toml"
         env:
           CIBW_ARCHS: "${{ matrix.os.arch }}"
@@ -116,8 +116,8 @@ jobs:
 
       - uses: actions/upload-artifact@v3
         with:
-          name: "dist"
-          path: "./dist/*.whl"
+          name: "wheelhouse"
+          path: "./wheelhouse/*.whl"
 
   ################################################################################
   # Test package with Tox
@@ -181,16 +181,16 @@ jobs:
       contents: write
 
     steps:
-      - name: Download dist
+      - name: Download wheelhouse
         uses: actions/download-artifact@v3
         with:
-          name: "dist"
-          path: "./dist"
+          name: "wheelhouse"
+          path: "./wheelhouse"
 
       - name: Publish to GitHub Releases
         uses: softprops/action-gh-release@v1
         with:
-          files: "./dist/*.whl"
+          files: "./wheelhouse/*.whl"
           fail_on_unmatched_files: true
 
   ################################################################################
@@ -211,13 +211,13 @@ jobs:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
 
     steps:
-      - name: Download dist
+      - name: Download wheelhouse
         uses: actions/download-artifact@v3
         with:
-          name: "dist"
-          path: "./dist"
+          name: "wheelhouse"
+          path: "./wheelhouse"
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          packages-dir: "./dist"
+          packages-dir: "./wheelhouse"
