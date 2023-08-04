@@ -35,7 +35,7 @@ jobs:
   ################################################################################
 
   build:
-    name: "Build / ${{ matrix.os.name }} - ${{ matrix.os.arch }}"
+    name: "Build / ${{ matrix.os.name }} / ${{ matrix.os.plat}}-${{ matrix.os.arch }}"
     runs-on: ${{ matrix.os.type }}
 
     strategy:
