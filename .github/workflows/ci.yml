@@ -93,7 +93,7 @@ jobs:
         # Required to build aarch64 wheels.
         if: matrix.os.arch == 'aarch64'
         name: Set up QEMU (linux/aarch64)
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: "arm64"
 
@@ -101,7 +101,7 @@ jobs:
         # Required to build i686 wheels.
         if: matrix.os.arch == 'i686'
         name: Set up QEMU (linux/i686)
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: "386"
 
