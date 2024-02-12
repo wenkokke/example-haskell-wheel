@@ -41,10 +41,10 @@ jobs:
     strategy:
       matrix:
         os:
-          # - name: "Linux"
-          #   type: "ubuntu-latest"
-          #   arch: "aarch64"
-          #   plat: "manylinux"
+          - name: "Linux"
+            type: "ubuntu-latest"
+            arch: "aarch64"
+            plat: "manylinux"
           # - name: "Linux"
           #   type: "ubuntu-latest"
           #   arch: "i686"
