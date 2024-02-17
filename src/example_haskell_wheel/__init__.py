@@ -8,7 +8,7 @@ from ._binding import (
     unsafe_hs_example_haskell_wheel_exit,
 )
 
-VERSION: str = "1.2.0"
+VERSION: str = "1.3.0"
 
 
 class Session:
