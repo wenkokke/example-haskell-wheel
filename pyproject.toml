@@ -61,6 +61,7 @@ build-frontend = "build"
 build = [
   # GHC provides x86_64 and arm64 builds for macOS.
   "*-macosx_x86_64",
+  "*-macosx_arm64",
   # GHC provides an AMD64 build for Windows.
   "*-win_amd64",
   # GHC provides an x86_64 build for CentOS 7 (manylinux2014).
@@ -80,11 +81,11 @@ skip = [
 test-command = "pytest {package}/tests"
 test-extras = "test"
 # 19-06-2023:
-# Use custom manylinux and musllinux images with GHC 9.4.4 preinstalled.
-manylinux-aarch64-image = "wenkokke/manylinux_2_28_ghc944_aarch64"
-manylinux-i686-image = "wenkokke/manylinux2014_ghc944_i686"
-manylinux-x86_64-image = "wenkokke/manylinux2014_ghc944_x86_64"
-musllinux-x86_64-image = "wenkokke/musllinux_1_1_ghc944_x86_64"
+# Use custom manylinux and musllinux images with GHC 9.4.8 preinstalled.
+manylinux-aarch64-image = "wenkokke/manylinux_2_28_ghc948_aarch64"
+manylinux-i686-image = "wenkokke/manylinux2014_ghc948_i686"
+manylinux-x86_64-image = "wenkokke/manylinux2014_ghc948_x86_64"
+musllinux-x86_64-image = "wenkokke/musllinux_1_1_ghc948_x86_64"
 
 [tool.mypy]
 mypy_path = "src"
