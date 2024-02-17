@@ -1,5 +1,4 @@
-from contextlib import AbstractContextManager
-from typing import List, Any, cast
+from typing import List, cast
 
 from ._binding import (
     unsafe_hs_example_haskell_wheel_version,
@@ -12,29 +11,22 @@ from ._binding import (
 VERSION: str = "1.2.0"
 
 
-def version() -> str:
-    try:
-        unsafe_hs_example_haskell_wheel_init([])
-        return str(unsafe_hs_example_haskell_wheel_version())
-    finally:
-        unsafe_hs_example_haskell_wheel_exit()
+class Session:
+    def __init__(self, args: List[str] = []) -> None:
+        self.args = args
 
-
-def main(args: List[str]) -> None:
-    try:
-        unsafe_hs_example_haskell_wheel_init(args)
-        unsafe_hs_example_haskell_wheel_main()
-    finally:
-        unsafe_hs_example_haskell_wheel_exit()
-
-
-class Session(AbstractContextManager["Session"]):
     def __enter__(self) -> "Session":
-        unsafe_hs_example_haskell_wheel_init([])
+        unsafe_hs_example_haskell_wheel_init(self.args)
         return self
 
-    def __exit__(self, exc_type: Any, exc_value: Any, traceback: Any) -> None:
+    def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
         unsafe_hs_example_haskell_wheel_exit()
+
+    def version(self) -> str:
+        return cast(str, unsafe_hs_example_haskell_wheel_version())
+
+    def main(self) -> int:
+        return cast(int, unsafe_hs_example_haskell_wheel_main())
 
     def fib(self, n: int) -> int:
         return cast(int, unsafe_hs_example_haskell_wheel_fib(n))

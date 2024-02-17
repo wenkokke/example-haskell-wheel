@@ -1,28 +1,40 @@
+from contextlib import redirect_stdout
+from io import StringIO
+from example_haskell_wheel import Session, VERSION
 import pytest
-from typing import Dict, List
+from typing import Iterator, List
 
 
-def test_example_haskell_wheel_session() -> None:
-    import example_haskell_wheel
+@pytest.fixture(scope="session")  # type: ignore
+def session() -> Iterator[Session]:
+    with Session(["example-haskell-wheel", "47"]) as session:
+        yield session
 
-    with example_haskell_wheel.Session() as session:
-        # Test the version
-        example_haskell_wheel.version() == example_haskell_wheel.VERSION
 
-        # Test the fib function
-        fib_fixture: Dict[int, int] = {
-            11: 89,
-            23: 28657,
-            35: 9227465,
-            46: 1836311903,
-            # Cause an integer overflow:
-            # 47: 2971215073,
-            # 59: 956722026041,
-        }
+def test_example_haskell_wheel_version(session: Session) -> None:
+    assert session.version() == VERSION
 
-        # Test the fib function
-        for input, golden_output in fib_fixture.items():
-            assert session.fib(input) == golden_output
+
+def test_example_haskell_wheel_main(session: Session) -> None:
+    tmp_stdout = StringIO()
+    with redirect_stdout(tmp_stdout):
+        assert session.main() == 0
+    assert tmp_stdout.getvalue().strip() == "fib 47 -> 2971215073"
+
+
+@pytest.mark.parametrize(
+    "input, golden_output",
+    [
+        (11, 89),
+        (23, 28657),
+        (35, 9227465),
+        (46, 1836311903),
+    ],
+)  # type: ignore
+def test_example_haskell_wheel_fib(
+    session: Session, input: int, golden_output: int
+) -> None:
+    assert session.fib(input) == golden_output
 
 
 @pytest.mark.parametrize(
@@ -36,7 +48,7 @@ def test_example_haskell_wheel_session() -> None:
         (["59"], "fib 59 -> 956722026041"),
     ],
 )  # type: ignore
-def test_example_haskell_wheel_main(args: List[str], golden_output: str) -> None:
+def test_example_haskell_wheel_subprocess(args: List[str], golden_output: str) -> None:
     import subprocess
 
     actual_output = (
