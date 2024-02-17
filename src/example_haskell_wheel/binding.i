@@ -10,6 +10,10 @@ int unsafe_hs_example_haskell_wheel_main() {
   return hs_example_haskell_wheel_main();
 }
 
+int unsafe_hs_example_haskell_wheel_fib(int n) {
+  return hs_example_haskell_wheel_fib(n);
+}
+
 void unsafe_hs_example_haskell_wheel_init(int argc, char **argv) {
   hs_init(&argc, &argv);
 }
@@ -55,5 +59,6 @@ void unsafe_py_write_stderr(const char * str) {
 
 char * unsafe_hs_example_haskell_wheel_version();
 int unsafe_hs_example_haskell_wheel_main();
+int unsafe_hs_example_haskell_wheel_fib(int n);
 void unsafe_hs_example_haskell_wheel_init(int argc, char **argv);
 void unsafe_hs_example_haskell_wheel_exit();

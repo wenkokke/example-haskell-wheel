@@ -50,6 +50,12 @@ hs_example_haskell_wheel_main =
             Nothing -> py_write_stdout $ "fib " <> arg <> " -> error"
       return 0
 
+foreign export ccall hs_example_haskell_wheel_fib :: CInt -> IO CInt
+
+hs_example_haskell_wheel_fib :: CInt -> IO CInt
+hs_example_haskell_wheel_fib =
+  return . fromIntegral . fib . fromIntegral
+
 -- Taken from:
 -- https://wiki.haskell.org/The_Fibonacci_sequence#Fastest_Fib_in_the_West
 fib :: Integer -> Integer

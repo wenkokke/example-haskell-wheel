@@ -1,29 +1,47 @@
-from io import StringIO
-from typing import List
-import sys
+import pytest
+from typing import Dict, List
 
 
-def test_example_haskell_wheel_version() -> None:
+def test_example_haskell_wheel_session() -> None:
     import example_haskell_wheel
 
-    assert example_haskell_wheel.version() == example_haskell_wheel.VERSION
+    with example_haskell_wheel.Session() as session:
+        # Test the version
+        example_haskell_wheel.version() == example_haskell_wheel.VERSION
+
+        # Test the fib function
+        fib_fixture: Dict[int, int] = {
+            11: 89,
+            23: 28657,
+            35: 9227465,
+            46: 1836311903,
+            # Cause an integer overflow:
+            # 47: 2971215073,
+            # 59: 956722026041,
+        }
+
+        # Test the fib function
+        for input, golden_output in fib_fixture.items():
+            assert session.fib(input) == golden_output
 
 
-def assert_example_haskell_wheel_main(args: List[str], golden_output: str) -> None:
-    sys.stdout = tmp_stdout = StringIO()
-    sys.stderr = tmp_stderr = StringIO()
-    import example_haskell_wheel
+@pytest.mark.parametrize(
+    "args, golden_output",
+    [
+        (["11"], "fib 11 -> 89"),
+        (["23"], "fib 23 -> 28657"),
+        (["35"], "fib 35 -> 9227465"),
+        (["46"], "fib 46 -> 1836311903"),
+        (["47"], "fib 47 -> 2971215073"),
+        (["59"], "fib 59 -> 956722026041"),
+    ],
+)  # type: ignore
+def test_example_haskell_wheel_main(args: List[str], golden_output: str) -> None:
+    import subprocess
 
-    example_haskell_wheel.main(args)
-    sys.stdout = sys.__stdout__
-    sys.stderr = sys.__stderr__
-
-    assert tmp_stdout.getvalue() == golden_output
-
-
-def test_example_haskell_wheel_main() -> None:
-    assert_example_haskell_wheel_main(["11"], "fib 11 -> 89")
-    assert_example_haskell_wheel_main(["23"], "fib 23 -> 28657")
-    assert_example_haskell_wheel_main(["35"], "fib 35 -> 9227465")
-    assert_example_haskell_wheel_main(["47"], "fib 47 -> 2971215073")
-    assert_example_haskell_wheel_main(["59"], "fib 59 -> 956722026041")
+    actual_output = (
+        subprocess.check_output(["example-haskell-wheel", *args])
+        .decode("utf-8")
+        .strip()
+    )
+    assert actual_output == golden_output
