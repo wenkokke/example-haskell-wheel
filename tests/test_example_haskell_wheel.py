@@ -1,4 +1,6 @@
+from io import StringIO
 from typing import List
+import sys
 
 
 def test_example_haskell_wheel_version() -> None:
@@ -8,14 +10,15 @@ def test_example_haskell_wheel_version() -> None:
 
 
 def assert_example_haskell_wheel_main(args: List[str], golden_output: str) -> None:
-    import subprocess
+    sys.stdout = tmp_stdout = StringIO()
+    sys.stderr = tmp_stderr = StringIO()
+    import example_haskell_wheel
 
-    actual_output = (
-        subprocess.check_output(["example-haskell-wheel", *args])
-        .decode("utf-8")
-        .strip()
-    )
-    assert actual_output == golden_output
+    example_haskell_wheel.main(args)
+    sys.stdout = sys.__stdout__
+    sys.stderr = sys.__stderr__
+
+    assert tmp_stdout.getvalue() == golden_output
 
 
 def test_example_haskell_wheel_main() -> None:

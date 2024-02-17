@@ -1,18 +1,27 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module ExampleHaskellWheel.Binding where
+module ExampleHaskellWheelBinding where
 
 import Control.Exception (Exception (..), SomeException (..), handle)
 import Control.Monad (forM_)
 import Data.Version (showVersion)
 import Foreign.C (CInt (..))
-import Foreign.C.String (CString, newCString)
+import Foreign.C.String (CString, newCString, withCString)
 import Paths_example_haskell_wheel (version)
 import System.Environment (getArgs)
 import System.Exit (ExitCode (..))
-import System.IO (hPutStrLn, stderr)
 import Text.Read (readMaybe)
+
+foreign import ccall unsafe_py_write_stdout :: CString -> IO ()
+
+py_write_stdout :: String -> IO ()
+py_write_stdout str = withCString str unsafe_py_write_stdout
+
+foreign import ccall unsafe_py_write_stderr :: CString -> IO ()
+
+py_write_stderr :: String -> IO ()
+py_write_stderr str = withCString str unsafe_py_write_stderr
 
 foreign export ccall hs_example_haskell_wheel_version :: IO CString
 
@@ -28,7 +37,7 @@ exitHandler (ExitFailure n) = return (fromIntegral n)
 
 uncaughtExceptionHandler :: SomeException -> IO CInt
 uncaughtExceptionHandler (SomeException e) =
-  hPutStrLn stderr (displayException e) >> return 1
+  py_write_stderr (displayException e) >> return 1
 
 hs_example_haskell_wheel_main :: IO CInt
 hs_example_haskell_wheel_main =
@@ -37,8 +46,8 @@ hs_example_haskell_wheel_main =
       getArgs >>= \args ->
         forM_ args $ \arg -> do
           case readMaybe arg of
-            Just n -> putStrLn $ "fib " <> show n <> " -> " <> show (fib n)
-            Nothing -> putStrLn $ "fib " <> arg <> " -> error"
+            Just n -> py_write_stdout $ "fib " <> show n <> " -> " <> show (fib n)
+            Nothing -> py_write_stdout $ "fib " <> arg <> " -> error"
       return 0
 
 -- Taken from:
