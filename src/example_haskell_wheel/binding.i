@@ -1,6 +1,6 @@
 %module binding
 %{
-#include "ExampleHaskellWheel/Binding_stub.h"
+#include "ExampleHaskellWheelBinding_stub.h"
 
 char * unsafe_hs_example_haskell_wheel_version() {
   return hs_example_haskell_wheel_version();
@@ -10,12 +10,24 @@ int unsafe_hs_example_haskell_wheel_main() {
   return hs_example_haskell_wheel_main();
 }
 
-void unsafe_hs_init(int argc, char **argv) {
+int unsafe_hs_example_haskell_wheel_fib(int n) {
+  return hs_example_haskell_wheel_fib(n);
+}
+
+void unsafe_hs_example_haskell_wheel_init(int argc, char **argv) {
   hs_init(&argc, &argv);
 }
 
-void unsafe_hs_exit() {
+void unsafe_hs_example_haskell_wheel_exit() {
   hs_exit();
+}
+
+void unsafe_py_write_stdout(const char * str) {
+  PySys_FormatStdout("%s", str);
+}
+
+void unsafe_py_write_stderr(const char * str) {
+  PySys_FormatStderr("%s", str);
 }
 %}
 
@@ -47,5 +59,6 @@ void unsafe_hs_exit() {
 
 char * unsafe_hs_example_haskell_wheel_version();
 int unsafe_hs_example_haskell_wheel_main();
-void unsafe_hs_init(int argc, char **argv);
-void unsafe_hs_exit();
+int unsafe_hs_example_haskell_wheel_fib(int n);
+void unsafe_hs_example_haskell_wheel_init(int argc, char **argv);
+void unsafe_hs_example_haskell_wheel_exit();

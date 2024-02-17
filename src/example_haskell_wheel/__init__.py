@@ -1,26 +1,32 @@
-from typing import List
+from typing import List, cast
 
 from ._binding import (
     unsafe_hs_example_haskell_wheel_version,
     unsafe_hs_example_haskell_wheel_main,
-    unsafe_hs_init,
-    unsafe_hs_exit,
+    unsafe_hs_example_haskell_wheel_fib,
+    unsafe_hs_example_haskell_wheel_init,
+    unsafe_hs_example_haskell_wheel_exit,
 )
 
 VERSION: str = "1.2.0"
 
 
-def version() -> str:
-    try:
-        unsafe_hs_init([])
-        return str(unsafe_hs_example_haskell_wheel_version())
-    finally:
-        unsafe_hs_exit()
+class Session:
+    def __init__(self, args: List[str] = []) -> None:
+        self.args = args
 
+    def __enter__(self) -> "Session":
+        unsafe_hs_example_haskell_wheel_init(self.args)
+        return self
 
-def main(args: List[str]) -> None:
-    try:
-        unsafe_hs_init(args)
-        unsafe_hs_example_haskell_wheel_main()
-    finally:
-        unsafe_hs_exit()
+    def __exit__(self, exc_type: None, exc_value: None, traceback: None) -> None:
+        unsafe_hs_example_haskell_wheel_exit()
+
+    def version(self) -> str:
+        return cast(str, unsafe_hs_example_haskell_wheel_version())
+
+    def main(self) -> int:
+        return cast(int, unsafe_hs_example_haskell_wheel_main())
+
+    def fib(self, n: int) -> int:
+        return cast(int, unsafe_hs_example_haskell_wheel_fib(n))
