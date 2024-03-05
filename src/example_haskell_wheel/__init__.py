@@ -23,10 +23,10 @@ class Session:
         unsafe_hs_example_haskell_wheel_exit()
 
     def version(self) -> str:
-        return cast(str, unsafe_hs_example_haskell_wheel_version())
+        return unsafe_hs_example_haskell_wheel_version()
 
     def main(self) -> int:
-        return cast(int, unsafe_hs_example_haskell_wheel_main())
+        return unsafe_hs_example_haskell_wheel_main()
 
     def fib(self, n: int) -> int:
-        return cast(int, unsafe_hs_example_haskell_wheel_fib(n))
+        return unsafe_hs_example_haskell_wheel_fib(n)
