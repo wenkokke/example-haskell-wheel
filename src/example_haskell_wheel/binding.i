@@ -22,11 +22,11 @@ void unsafe_hs_example_haskell_wheel_exit() {
   hs_exit();
 }
 
-void unsafe_py_write_stdout(const char * str) {
+void unsafe_py_format_stdout(const char * str) {
   PySys_FormatStdout("%s", str);
 }
 
-void unsafe_py_write_stderr(const char * str) {
+void unsafe_py_format_stderr(const char * str) {
   PySys_FormatStderr("%s", str);
 }
 %}
@@ -62,3 +62,5 @@ int unsafe_hs_example_haskell_wheel_main();
 int unsafe_hs_example_haskell_wheel_fib(int n);
 void unsafe_hs_example_haskell_wheel_init(int argc, char **argv);
 void unsafe_hs_example_haskell_wheel_exit();
+void unsafe_py_format_stdout(const char * str);
+void unsafe_py_format_stderr(const char * str);
