@@ -36,7 +36,7 @@ jobs:
 
   build:
     name: "Build / ${{ matrix.job.os.name }} / ${{ matrix.job.os.plat}}-${{ matrix.job.os.arch }}"
-    runs-on: ${{ matrix.job.os.type }}
+    runs-on: ${{ matrix.job.os.runner }}
 
     strategy:
       matrix:
