@@ -89,7 +89,7 @@ musllinux-x86_64-image = "wenkokke/musllinux_1_1_ghc948_x86_64"
 
 [tool.mypy]
 mypy_path = "src"
-python_version = 3.7
+python_version = "3.7"
 strict = true
 implicit_reexport = false
 
