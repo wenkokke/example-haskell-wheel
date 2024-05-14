@@ -1,10 +1,11 @@
 #!/bin/sh
 
 # Get configuration from Tox
-env_python="${env_python:-"python"}"
+# 2024-04-16: The substitution for '{env_python}' and other environment variables no longer appears to work.
+python="python"
 package_root="${package_root:-"$(dirname "$( cd -- "$(dirname "$0")" >/dev/null 2>&1 || exit ; pwd -P )" )"}"
-dist_dir="${dist_dir:-"${package_root}/dist"}"
-dist_tmp_dir="${dist_tmp_dir:-"${package_root}/dist/_tmp"}"
+dist_dir="${package_root}/dist"
+dist_tmp_dir="${package_root}/dist/_tmp"
 
 # Get target platform;
 platform=$("${env_python}" -c 'import sys; print(sys.platform)')
