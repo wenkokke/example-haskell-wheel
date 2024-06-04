@@ -18,6 +18,12 @@ _hs_rts_init: bool = False
 _hs_rts_lock: Lock = Lock()
 
 
+def hs_rts_exit() -> None:
+    global _hs_rts_lock
+    with _hs_rts_lock:
+        unsafe_hs_example_haskell_wheel_exit()
+
+
 @contextmanager
 def hs_rts_init(args: List[str] = []) -> Iterator[None]:
     global _hs_rts_init
@@ -26,7 +32,7 @@ def hs_rts_init(args: List[str] = []) -> Iterator[None]:
         if not _hs_rts_init:
             _hs_rts_init = True
             unsafe_hs_example_haskell_wheel_init(args)
-            atexit.register(unsafe_hs_example_haskell_wheel_exit)
+            atexit.register(hs_rts_exit)
     yield None
 
 
