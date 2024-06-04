@@ -1,10 +1,10 @@
 import sys
+from typing import NoReturn
 import example_haskell_wheel
 
 
-def main() -> None:
-    with example_haskell_wheel.Session(sys.argv) as session:
-        sys.exit(session.main())
+def main() -> NoReturn:
+    sys.exit(example_haskell_wheel.main(sys.argv))
 
 
 if __name__ == "__main__":

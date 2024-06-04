@@ -1,18 +1,19 @@
 from contextlib import redirect_stdout
 from io import StringIO
-from example_haskell_wheel import Session, VERSION
 import pytest
 from typing import Iterator, List
+import example_haskell_wheel
+from example_haskell_wheel.typing import Session
 
 
 @pytest.fixture(scope="session")  # type: ignore
 def session() -> Iterator[Session]:
-    with Session(["example-haskell-wheel", "47"]) as session:
-        yield session
+    with example_haskell_wheel.hs_rts_init(["example-haskell-wheel", "47"]):
+        yield example_haskell_wheel
 
 
 def test_example_haskell_wheel_version(session: Session) -> None:
-    assert session.version() == VERSION
+    assert session.version() == example_haskell_wheel.VERSION
 
 
 def test_example_haskell_wheel_main(session: Session) -> None:
