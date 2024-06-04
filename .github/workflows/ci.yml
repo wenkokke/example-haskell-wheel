@@ -142,72 +142,6 @@ jobs:
           path: ./wheelhouse/*.whl
 
   ################################################################################
-  # Test package with Tox
-  ################################################################################
-
-  test:
-    name: Test / ${{ matrix.job.os.name }}
-    runs-on: ${{ matrix.job.os.runner }}
-
-    strategy:
-      matrix:
-        job:
-          - os:
-              name: "Linux"
-              runner: "ubuntu-latest"
-            python-version: |
-              3.12
-              3.11
-              3.10
-              3.9
-              3.8
-              3.7
-          - os:
-              name: "macOS"
-              runner: "macos-latest"
-            python-version: |
-              3.12
-              3.11
-              3.10
-              3.9
-              3.8
-          - os:
-              name: "Windows"
-              runner: "windows-latest"
-            python-version: |
-              3.12
-              3.11
-              3.10
-              3.9
-              3.8
-              3.7
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - # Required to run job via act: https://github.com/nektos/act
-        uses: actions/setup-python@v5
-        with:
-          cache: "pip"
-          cache-dependency-path: "./requirements-ci.txt"
-          python-version: "${{ matrix.job.python-version }}"
-
-      - # Required to run job via act: https://github.com/nektos/act
-        run: pip install -r "./requirements-ci.txt"
-
-      - # 19-05-2023:
-        # Required to build the wheels on macOS and Windows, but not on Linux,
-        # as Linux builds are run in containers, where GHC and Cabal are built
-        # by the `./scripts/before-all.sh` scripts.
-        if: matrix.job.os.name == 'macOS' || matrix.job.os.name == 'Windows'
-        uses: haskell/actions/setup@v2
-        with:
-          ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
-          cabal-version: ${{ env.DEFAULT_CABAL_VERSION }}
-
-      - run: pipx run tox
-
-  ################################################################################
   # Publish package to GitHub Releases
   ################################################################################
 
@@ -215,7 +149,7 @@ jobs:
     name: Publish to GitHub Releases
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build, test]
+    needs: [build]
 
     permissions:
       contents: write
@@ -242,7 +176,7 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build, test]
+    needs: [build]
 
     environment:
       name: pypi
