@@ -1,13 +1,14 @@
 #!/bin/sh
 
 # Get configuration from Tox
-env_python="${env_python:-"python"}"
+# 2024-04-16: The substitution for '{env_python}' and other environment variables no longer appears to work.
+python="python"
 package_root="${package_root:-"$(dirname "$( cd -- "$(dirname "$0")" >/dev/null 2>&1 || exit ; pwd -P )" )"}"
-dist_dir="${dist_dir:-"${package_root}/dist"}"
-dist_tmp_dir="${dist_tmp_dir:-"${package_root}/dist/_tmp"}"
+dist_dir="${package_root}/dist"
+dist_tmp_dir="${package_root}/dist/_tmp"
 
 # Get target platform;
-platform=$("${env_python}" -c 'import sys; print(sys.platform)')
+platform=$("${python}" -c 'import sys; print(sys.platform)')
 
 # Check if dependencies are available:
 
@@ -21,7 +22,7 @@ then
 fi
 
 # Check if build is available:
-has_build=$("${env_python}" -c 'import importlib.util; print(importlib.util.find_spec("build") is not None)')
+has_build=$("${python}" -c 'import importlib.util; print(importlib.util.find_spec("build") is not None)')
 if [ "${has_build}" = 'False' ]
 then
     echo "${0} requires 'build'"
@@ -33,7 +34,7 @@ fi
 case "${platform}" in
     'linux')
         # Check if auditwheel is available:
-        has_auditwheel=$("${env_python}" -c 'import importlib.util; print(importlib.util.find_spec("auditwheel") is not None)')
+        has_auditwheel=$("${python}" -c 'import importlib.util; print(importlib.util.find_spec("auditwheel") is not None)')
         if [ "${has_auditwheel}" = 'False' ]
         then
             echo "${0} requires 'auditwheel'"
@@ -43,7 +44,7 @@ case "${platform}" in
     ;;
     'darwin')
         # Check if delocate is available:
-        has_delocate=$("${env_python}" -c 'import importlib.util; print(importlib.util.find_spec("delocate") is not None)')
+        has_delocate=$("${python}" -c 'import importlib.util; print(importlib.util.find_spec("delocate") is not None)')
         if [ "${has_delocate}" = 'False' ]
         then
             echo "${0} requires 'delocate'"
@@ -57,14 +58,14 @@ esac
 "${env_cabal}" v2-update
 
 # Build the wheel
-"${env_python}" -m build --wheel --outdir "${dist_tmp_dir}" "${package_root}"
+"${python}" -m build --wheel --outdir "${dist_tmp_dir}" "${package_root}"
 
 # Delocate the wheel
 case "${platform}" in
     'linux')
         # Repair wheel with auditwheel
-        libc_xy="$("${env_python}" -c 'import platform; print(platform.libc_ver()[1].replace(".","_"))')"
-        machine="$("${env_python}" -c 'import platform; print(platform.machine())')"
+        libc_xy="$("${python}" -c 'import platform; print(platform.libc_ver()[1].replace(".","_"))')"
+        machine="$("${python}" -c 'import platform; print(platform.machine())')"
         auditwheel repair --wheel-dir "${dist_dir}" --plat "manylinux_${libc_xy}_${machine}" "${dist_tmp_dir}"/*.whl
     ;;
     'darwin')

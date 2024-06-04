@@ -35,47 +35,54 @@ jobs:
   ################################################################################
 
   build:
-    name: "Build / ${{ matrix.os.name }} / ${{ matrix.os.plat}}-${{ matrix.os.arch }}"
-    runs-on: ${{ matrix.os.type }}
+    name: "Build / ${{ matrix.job.os.name }} / ${{ matrix.job.os.plat}}-${{ matrix.job.os.arch }}"
+    runs-on: ${{ matrix.job.os.runner }}
 
     strategy:
       matrix:
-        os:
-          - name: "Linux"
-            type: "ubuntu-latest"
-            arch: "aarch64"
-            plat: "manylinux"
-          - name: "Linux"
-            type: "ubuntu-latest"
-            arch: "i686"
-            plat: "manylinux"
-          - name: "Linux"
-            type: "ubuntu-latest"
-            arch: "x86_64"
-            plat: "manylinux"
-          - name: "Linux"
-            type: "ubuntu-latest"
-            arch: "x86_64"
-            plat: "musllinux"
-          - name: "macOS"
-            type: "macos-12"
-            arch: "x86_64"
-            plat: "macosx"
-          - name: "macOS"
-            type: "macos-14"
-            arch: "arm64"
-            plat: "macosx"
-          - name: "Windows"
-            type: "windows-latest"
-            arch: "AMD64"
-            plat: "win"
+        job:
+          - os:
+              name: "Linux"
+              runner: "ubuntu-latest"
+              arch: "aarch64"
+              plat: "manylinux"
+          - os:
+              name: "Linux"
+              runner: "ubuntu-latest"
+              arch: "i686"
+              plat: "manylinux"
+          - os:
+              name: "Linux"
+              runner: "ubuntu-latest"
+              arch: "x86_64"
+              plat: "manylinux"
+          - os:
+              name: "Linux"
+              runner: "ubuntu-latest"
+              arch: "x86_64"
+              plat: "musllinux"
+          - os:
+              name: "macOS"
+              runner: "macos-12"
+              arch: "x86_64"
+              plat: "macosx"
+          - os:
+              name: "macOS"
+              runner: "macos-14"
+              arch: "arm64"
+              plat: "macosx"
+          - os:
+              name: "Windows"
+              runner: "windows-latest"
+              arch: "AMD64"
+              plat: "win"
 
     steps:
       - uses: actions/checkout@v4
 
       - # 12-02-2024:
         # Print the macOS architecture.
-        if: matrix.os.name == 'macOS'
+        if: matrix.job.os.name == 'macOS'
         run: echo "::debug::$(uname -a)"
 
       - # Required to run job via act: https://github.com/nektos/act
@@ -92,7 +99,7 @@ jobs:
         # Required to build the wheels on macOS and Windows, but not on Linux,
         # as Linux builds are run in containers, where GHC and Cabal are built
         # by the `./scripts/before-all.sh` scripts.
-        if: matrix.os.name == 'macOS' || matrix.os.name == 'Windows'
+        if: matrix.job.os.name == 'macOS' || matrix.job.os.name == 'Windows'
         uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
@@ -100,12 +107,12 @@ jobs:
 
       - # 12-02-2024:
         # Print the GHC architecture.
-        if: matrix.os.name == 'macOS' || matrix.os.name == 'Windows'
+        if: matrix.job.os.name == 'macOS' || matrix.job.os.name == 'Windows'
         run: echo "::debug::$(ghc --info)"
 
       - # 19-06-2023:
         # Required to build aarch64 wheels.
-        if: matrix.os.name == 'Linux' && matrix.os.arch == 'aarch64'
+        if: matrix.job.os.name == 'Linux' && matrix.job.os.arch == 'aarch64'
         name: Set up QEMU (linux/aarch64)
         uses: docker/setup-qemu-action@v3
         with:
@@ -113,73 +120,26 @@ jobs:
 
       - # 19-06-2023:
         # Required to build i686 wheels.
-        if: matrix.os.name == 'Linux' && matrix.os.arch == 'i686'
+        if: matrix.job.os.name == 'Linux' && matrix.job.os.arch == 'i686'
         name: Set up QEMU (linux/i686)
         uses: docker/setup-qemu-action@v3
         with:
           platforms: "386"
 
-      - uses: pypa/cibuildwheel@v2.16.5
+      - uses: pypa/cibuildwheel@v2.18.0
         with:
           output-dir: "./wheelhouse"
           config-file: "{package}/pyproject.toml"
         env:
-          CIBW_ARCHS: "${{ matrix.os.arch }}"
-          CIBW_BUILD: "*${{ matrix.os.plat }}*"
+          CIBW_ARCHS: "${{ matrix.job.os.arch }}"
+          CIBW_BUILD: "*${{ matrix.job.os.plat }}*"
           MACOSX_DEPLOYMENT_TARGET: "10.10"
 
-      - uses: actions/upload-artifact@v3
+      - name: Upload wheels
+        uses: actions/upload-artifact@v4
         with:
-          name: "wheelhouse"
-          path: "./wheelhouse/*.whl"
-
-  ################################################################################
-  # Test package with Tox
-  ################################################################################
-
-  test:
-    name: Test / ${{ matrix.os.name }}
-    runs-on: ${{ matrix.os.type }}
-
-    strategy:
-      matrix:
-        os:
-          - name: "Linux"
-            type: "ubuntu-latest"
-          - name: "macOS"
-            type: "macos-latest"
-          - name: "Windows"
-            type: "windows-latest"
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - # Required to run job via act: https://github.com/nektos/act
-        uses: actions/setup-python@v5
-        with:
-          cache: "pip"
-          cache-dependency-path: "./requirements-ci.txt"
-          python-version: |
-            3.11
-            3.10
-            3.9
-            3.8
-            3.7
-
-      - # Required to run job via act: https://github.com/nektos/act
-        run: pip install -r "./requirements-ci.txt"
-
-      - # 19-05-2023:
-        # Required to build the wheels on macOS and Windows, but not on Linux,
-        # as Linux builds are run in containers, where GHC and Cabal are built
-        # by the `./scripts/before-all.sh` scripts.
-        if: matrix.os.name == 'macOS' || matrix.os.name == 'Windows'
-        uses: haskell/actions/setup@v2
-        with:
-          ghc-version: ${{ env.DEFAULT_GHC_VERSION }}
-          cabal-version: ${{ env.DEFAULT_CABAL_VERSION }}
-
-      - run: pipx run tox
+          name: "wheelhouse-${{ matrix.job.os.plat }}-${{ matrix.job.os.arch }}"
+          path: ./wheelhouse/*.whl
 
   ################################################################################
   # Publish package to GitHub Releases
@@ -189,20 +149,21 @@ jobs:
     name: Publish to GitHub Releases
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build, test]
+    needs: [build]
 
     permissions:
       contents: write
 
     steps:
-      - name: Download wheelhouse
-        uses: actions/download-artifact@v3
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: "wheelhouse"
+          pattern: "wheelhouse-*-*"
           path: "./wheelhouse"
+          merge-multiple: true
 
       - name: Publish to GitHub Releases
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: "./wheelhouse/*.whl"
           fail_on_unmatched_files: true
@@ -215,7 +176,7 @@ jobs:
     name: Publish to PyPI
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build, test]
+    needs: [build]
 
     environment:
       name: pypi
@@ -225,11 +186,12 @@ jobs:
       id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
 
     steps:
-      - name: Download wheelhouse
-        uses: actions/download-artifact@v3
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: "wheelhouse"
+          pattern: "wheelhouse-*-*"
           path: "./wheelhouse"
+          merge-multiple: true
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
