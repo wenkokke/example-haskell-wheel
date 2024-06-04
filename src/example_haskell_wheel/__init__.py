@@ -1,5 +1,6 @@
 import atexit
 from contextlib import contextmanager
+from threading import Lock
 from typing import Iterator, List
 
 from ._binding import (
@@ -14,15 +15,18 @@ VERSION: str = "1.3.0"
 
 
 _hs_rts_init: bool = False
+_hs_rts_lock: Lock = Lock()
 
 
 @contextmanager
 def hs_rts_init(args: List[str] = []) -> Iterator[None]:
     global _hs_rts_init
-    if not _hs_rts_init:
-        _hs_rts_init = True
-        unsafe_hs_example_haskell_wheel_init(args)
-        atexit.register(unsafe_hs_example_haskell_wheel_exit)
+    global _hs_rts_lock
+    with _hs_rts_lock:
+        if not _hs_rts_init:
+            _hs_rts_init = True
+            unsafe_hs_example_haskell_wheel_init(args)
+            atexit.register(unsafe_hs_example_haskell_wheel_exit)
     yield None
 
 
