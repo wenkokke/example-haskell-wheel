@@ -126,7 +126,7 @@ jobs:
         with:
           platforms: "386"
 
-      - uses: pypa/cibuildwheel@v2.18.1
+      - uses: pypa/cibuildwheel@v2.19.1
         with:
           output-dir: "./wheelhouse"
           config-file: "{package}/pyproject.toml"
