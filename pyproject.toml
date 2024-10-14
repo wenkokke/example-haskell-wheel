@@ -97,6 +97,7 @@ implicit_reexport = false
 [tool.setuptools.packages.find]
 where = ["src"]
 
+# TODO: fix `package_glob` on musllinux
 [tool.tox]
 legacy_tox_ini = """
 [tox]

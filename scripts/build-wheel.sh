@@ -66,7 +66,13 @@ case "${platform}" in
         # Repair wheel with auditwheel
         libc_xy="$("${python}" -c 'import platform; print(platform.libc_ver()[1].replace(".","_"))')"
         machine="$("${python}" -c 'import platform; print(platform.machine())')"
-        auditwheel repair --wheel-dir "${dist_dir}" --plat "manylinux_${libc_xy}_${machine}" "${dist_tmp_dir}"/*.whl
+        if [ "${libc_xy}" != "" ]; then
+            plattag="manylinux_${libc_xy}_${machine}"
+        else
+            musl_xy="$("${python}" -c 'import sys; import packaging._musllinux; musl_ver=packaging._musllinux._get_musl_version(sys.executable); print(f"{musl_ver.major}_{musl_ver.minor}")')"
+            plattag="musllinux_${musl_xy}_${machine}"
+        fi
+        auditwheel repair --wheel-dir "${dist_dir}" --plat "${plattag}" "${dist_tmp_dir}"/*.whl
     ;;
     'darwin')
         # Repair wheel with delocate-wheel
