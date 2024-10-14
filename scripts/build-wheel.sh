@@ -64,15 +64,15 @@ esac
 case "${platform}" in
     'linux')
         # Repair wheel with auditwheel
-        libc_xy="$("${python}" -c 'import platform; print(platform.libc_ver()[1].replace(".","_"))')"
         machine="$("${python}" -c 'import platform; print(platform.machine())')"
-        if [ "${libc_xy}" != "" ]; then
-            plattag="manylinux_${libc_xy}_${machine}"
+        libc_ver="$("${python}" -c 'import platform; print(platform.libc_ver()[1].replace(".","_"))')"
+        if [ "${libc_ver}" = "" ]; then
+            musl_ver="$("${python}" -c 'import sys; import packaging._musllinux; musl_ver=packaging._musllinux._get_musl_version(sys.executable); musl_ver and print(f"{musl_ver.major}_{musl_ver.minor}")')"
+            plat="musllinux_${musl_ver}_${machine}"
         else
-            musl_xy="$("${python}" -c 'import sys; import packaging._musllinux; musl_ver=packaging._musllinux._get_musl_version(sys.executable); print(f"{musl_ver.major}_{musl_ver.minor}")')"
-            plattag="musllinux_${musl_xy}_${machine}"
+            plat="manylinux_${libc_ver}_${machine}"
         fi
-        auditwheel repair --wheel-dir "${dist_dir}" --plat "${plattag}" "${dist_tmp_dir}"/*.whl
+        auditwheel repair --wheel-dir "${dist_dir}" --plat "${plat}" "${dist_tmp_dir}"/*.whl
     ;;
     'darwin')
         # Repair wheel with delocate-wheel
