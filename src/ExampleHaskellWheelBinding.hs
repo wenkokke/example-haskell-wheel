@@ -1,6 +1,8 @@
 {-# LANGUAGE ForeignFunctionInterface #-}
 {-# OPTIONS_GHC -Wall #-}
 
+-- NOTE: hDuplicateTo: illegal operation (handles are incompatible)
+
 module ExampleHaskellWheelBinding where
 
 import Control.Exception (Exception (..), SomeException (..), handle)
@@ -17,9 +19,9 @@ import Foreign.Ptr (castPtr, plusPtr)
 import GHC.IO.Buffer (Buffer (..), newByteBuffer)
 import GHC.IO.BufferedIO (BufferedIO (..))
 import GHC.IO.Device (IODevice (..), IODeviceType (..), RawIO (..))
-import GHC.IO.Handle (Handle, Handle__ (..), hDuplicateTo, noNewlineTranslation, withHandle_)
-import GHC.IO.Handle.Internals (mkFileHandleNoFinalizer)
-import GHC.IO.Handle.Types (NewlineMode (..))
+import GHC.IO.Handle (Handle, hDuplicateTo, noNewlineTranslation)
+import GHC.IO.Handle.Internals (mkFileHandleNoFinalizer, withHandle_)
+import GHC.IO.Handle.Types (HandleType (..), Handle__ (..), NewlineMode (..))
 import Paths_example_haskell_wheel (version)
 import System.Environment (getArgs)
 import System.Exit (ExitCode (..))
@@ -76,9 +78,9 @@ mkPyHandle dev = do
   let devName = "<" ++ show dev ++ ">"
   withHandle_ devName (toStdHandle dev) $ \stdHandle__ -> do
     let ioMode = handleTypeToIOMode (haType stdHandle__)
-    let textEncoding = haCoded stdHandle__
+    let textEncoding = haCodec stdHandle__
     let newlineMode = NewlineMode {inputNL = haInputNL stdHandle__, outputNL = haOutputNL stdHandle__}
-    mkFileHandleNoFinalizer dev ioMode textEncoding noNewlineTranslation
+    mkFileHandleNoFinalizer dev devName ioMode textEncoding noNewlineTranslation
 
 handleTypeToIOMode :: HandleType -> IOMode
 handleTypeToIOMode ReadHandle = ReadMode
