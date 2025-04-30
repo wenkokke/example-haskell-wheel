@@ -71,13 +71,16 @@ build = [
   "*-manylinux_i686",
   # GHC provides an aarch64 build for Debian 10 (manylinux_2_28 compatible).
   "*-manylinux_aarch64",
-  # GHC provides an x86_64 build for Alpine 3.12 (manylinux_2_28 compatible).
+  # GHC provides an x86_64 build for Alpine 3.12 (musllinux_1_1 compatible).
   "*-musllinux_x86_64",
 ]
 skip = [
   # 18-04-2023:
   # PyPy builds do not work.
   "pp*",
+  # 30-04-2025:
+  # musllinux builds for Python versions before 3.8 are no longer supported.
+  "cp{36,37}-musllinux_x86_64",
 ]
 test-command = "pytest {package}/tests"
 test-extras = "test"
