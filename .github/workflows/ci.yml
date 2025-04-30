@@ -39,6 +39,7 @@ jobs:
     runs-on: ${{ matrix.job.os.runner }}
 
     strategy:
+      fail-fast: false
       matrix:
         job:
           - os:
