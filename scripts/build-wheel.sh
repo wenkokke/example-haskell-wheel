@@ -66,7 +66,13 @@ case "${platform}" in
         # Repair wheel with auditwheel
         libc_xy="$("${python}" -c 'import platform; print(platform.libc_ver()[1].replace(".","_"))')"
         machine="$("${python}" -c 'import platform; print(platform.machine())')"
-        auditwheel repair --wheel-dir "${dist_dir}" --plat "manylinux_${libc_xy}_${machine}" "${dist_tmp_dir}"/*.whl
+        if [ "${libc_xy}" != "" ]; then
+          auditwheel repair --wheel-dir "${dist_dir}" --plat "manylinux_${libc_xy}_${machine}" "${dist_tmp_dir}"/*.whl
+        else
+          # NOTE: This is a huge hack, but getting the musl version isn't currently otherwise supported.
+          musl_xy="$("${python}" -c 'import packaging._musllinux; import sys; musl_ver = packaging._musllinux._get_musl_version(sys.executable); print(f"{musl_ver.major}_{musl_ver.minor}")')"
+          auditwheel repair --wheel-dir "${dist_dir}" --plat "musllinux_${musl_xy}_${machine}" "${dist_tmp_dir}"/*.whl
+        fi
     ;;
     'darwin')
         # Repair wheel with delocate-wheel

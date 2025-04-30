@@ -2,6 +2,7 @@
 
 # Get the manylinux image
 manylinux_image="${1}"
+shift 1
 if [ "${manylinux_image}" = '' ]; then
     echo "Usage: ${0} [manylinux_image]"
     echo
@@ -39,4 +40,4 @@ if [ -s "$fail" ]; then
 fi
 
 # Create a container for the build
-"${docker}" run --rm -v "${package_root}:/${package_name}" -w "/${package_name}" "${manylinux_image}" pipx run tox
+"${docker}" run $@ --rm -v "${package_root}:/${package_name}" -w "/${package_name}" "${manylinux_image}" pipx run tox
