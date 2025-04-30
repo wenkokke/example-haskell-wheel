@@ -64,7 +64,7 @@ jobs:
               plat: "musllinux"
           - os:
               name: "macOS"
-              runner: "macos-12"
+              runner: "macos-13"
               arch: "x86_64"
               plat: "macosx"
           - os:
