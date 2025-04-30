@@ -5,3 +5,9 @@
 # example-haskell-wheel
 
 An experiment in publishing a Haskell library as a Python wheel.
+
+To build a wheel for your platform, run:
+
+```sh
+pipx run build --wheel --outdir=dist
+```
